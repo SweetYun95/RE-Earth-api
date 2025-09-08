@@ -92,13 +92,14 @@ ysy: 윤승영
 
 모든 기능 개발은 개별 브랜치에서 수행 후,
 반드시 develop 브랜치 기준으로 PR(Pull Request) 을 생성해주세요.
-
+```bash
 🔀 브랜치 작업 및 Push 방법
 1. 브랜치 최초 이동
 git checkout -t origin/브랜치이름
 # 최초 Push 연결
 git push --set-upstream origin 브랜치이름
-
+git push -u origin ysy
+```
 
 이후에는 git push만 입력하면 됩니다.
 

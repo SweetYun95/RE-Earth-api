@@ -6,94 +6,94 @@ RE_Earth__project/
 re-earth-frontend/
 ├─ src/
 │  ├─ app/
-│  │  ├─ store.ts           // Redux store
-│  │  └─ rootReducer.ts     // slice 합치기
+│  │  ├─ store.js           // Redux store
+│  │  └─ rootReducer.js     // slice 합치기
 │  ├─ routes/
-│  │  ├─ AppRouter.tsx      // 라우팅 구성 (게스트/유저/관리자 가드)
+│  │  ├─ AppRouter.jsx      // 라우팅 구성 (게스트/유저/관리자 가드)
 │  │  ├─ guards/
-│  │  │  ├─ GuestOnly.tsx   // 비로그인 전용(랜딩/로그인/회원가입)
-│  │  │  ├─ UserOnly.tsx    // 로그인 사용자 전용
-│  │  │  └─ AdminOnly.tsx   // 관리자 전용
+│  │  │  ├─ GuestOnly.jsx   // 비로그인 전용(랜딩/로그인/회원가입)
+│  │  │  ├─ UserOnly.jsx    // 로그인 사용자 전용
+│  │  │  └─ AdminOnly.jsx   // 관리자 전용
 │  ├─ api/                   // REST API 모듈 (axios 인스턴스 포함)
-│  │  ├─ http.ts            // axios base, 인터셉터(JWT)
-│  │  ├─ authApi.ts         // 로그인/회원가입/OAuth 연동
-│  │  ├─ pointApi.ts        // 포인트 적립/조회/기부/결제
-│  │  ├─ itemApi.ts         // 상품(포인트 샵)
-│  │  ├─ marketApi.ts       // 아나바다 장터 CRUD/교환
-│  │  ├─ orderApi.ts        // 주문/취소
-│  │  ├─ postApi.ts         // 게시글/QnA
-│  │  ├─ kpiApi.ts          // KPI 대시보드
+│  │  ├─ http.js            // axios base, 인터셉터(JWT)
+│  │  ├─ authApi.js         // 로그인/회원가입/OAuth 연동
+│  │  ├─ pointApi.js        // 포인트 적립/조회/기부/결제
+│  │  ├─ itemApi.js         // 상품(포인트 샵)
+│  │  ├─ marketApi.js       // 아나바다 장터 CRUD/교환
+│  │  ├─ orderApi.js        // 주문/취소
+│  │  ├─ postApi.js         // 게시글/QnA
+│  │  ├─ kpiApi.js          // KPI 대시보드
 │  │  └─ external/          // 외부 API 어댑터 (티머니/카카오/공공데이터)
-│  │     ├─ tmoneyAdapter.ts // 대중교통 이용 인증 (어댑터 패턴)
-│  │     ├─ kakaoAdapter.ts  // 카카오 OAuth/지도 등
-│  │     └─ publicData.ts    // 의류수거함 위치(공공데이터) 조회
+│  │     ├─ tmoneyAdapter.js // 대중교통 이용 인증 (어댑터 패턴)
+│  │     ├─ kakaoAdapter.js  // 카카오 OAuth/지도 등
+│  │     └─ publicData.js    // 의류수거함 위치(공공데이터) 조회
 │  ├─ features/              // Redux slices
-│  │  ├─ authSlice.ts       // 유저/관리자 로그인 상태
-│  │  ├─ userSlice.ts       // 유저 정보
-│  │  ├─ itemSlice.ts       // 포인트 샵 상품
-│  │  ├─ orderSlice.ts      // 주문/취소
-│  │  ├─ pointSlice.ts      // 포인트, 결제, 기부
-│  │  ├─ marketSlice.ts     // 아나바다 상품/교환요청
-│  │  ├─ chatSlice.ts       // 채팅 방/메시지(소켓 이벤트 반영)
-│  │  └─ adminSlice.ts      // 관리자(회원/상품/게시글/KPI/기부현황)
+│  │  ├─ authSlice.js       // 유저/관리자 로그인 상태
+│  │  ├─ userSlice.js       // 유저 정보
+│  │  ├─ itemSlice.js       // 포인트 샵 상품
+│  │  ├─ orderSlice.js      // 주문/취소
+│  │  ├─ pointSlice.js      // 포인트, 결제, 기부
+│  │  ├─ marketSlice.js     // 아나바다 상품/교환요청
+│  │  ├─ chatSlice.js       // 채팅 방/메시지(소켓 이벤트 반영)
+│  │  └─ adminSlice.js      // 관리자(회원/상품/게시글/KPI/기부현황)
 │  ├─ pages/
 │  │  ├─ public/
-│  │  │  ├─ LandingPage.tsx // 랜딩(게스트만)
-│  │  │  ├─ LoginPage.tsx   // 유저 로그인
-│  │  │  ├─ SignupPage.tsx  // 회원가입
+│  │  │  ├─ LandingPage.jsx // 랜딩(게스트만)
+│  │  │  ├─ LoginPage.jsx   // 유저 로그인
+│  │  │  ├─ SignupPage.jsx  // 회원가입
 │  │  ├─ user/
-│  │  │  ├─ MainPage.tsx        // 로그인 후 메인
-│  │  │  ├─ PointEarnPage.tsx   // 포인트 적립(GPS 인증/수거함 입력)
-│  │  │  ├─ ShopListPage.tsx    // 포인트 샵 목록
-│  │  │  ├─ ShopDetailPage.tsx  // 샵 상품 상세 → 내부 포인트 결제
-│  │  │  ├─ OrderListPage.tsx   // 주문 조회/취소
-│  │  │  ├─ ProfilePage.tsx     // 내 정보
-│  │  │  ├─ QnaCreatePage.tsx   // 1:1 문의
-│  │  │  ├─ DonatePage.tsx      // 기부 폼 (포인트 사용 → 리워드)
-│  │  │  ├─ MapBinsPage.tsx     // 의류 수거함 지도(카카오/Leaflet)
+│  │  │  ├─ MainPage.jsx        // 로그인 후 메인
+│  │  │  ├─ PointEarnPage.jsx   // 포인트 적립(GPS 인증/수거함 입력)
+│  │  │  ├─ ShopListPage.jsx    // 포인트 샵 목록
+│  │  │  ├─ ShopDetailPage.jsx  // 샵 상품 상세 → 내부 포인트 결제
+│  │  │  ├─ OrderListPage.jsx   // 주문 조회/취소
+│  │  │  ├─ ProfilePage.jsx     // 내 정보
+│  │  │  ├─ QnaCreatePage.jsx   // 1:1 문의
+│  │  │  ├─ DonatePage.jsx      // 기부 폼 (포인트 사용 → 리워드)
+│  │  │  ├─ MapBinsPage.jsx     // 의류 수거함 지도(카카오/Leaflet)
 │  │  ├─ market/
-│  │  │  ├─ MarketListPage.tsx      // 장터 목록(샵 컴포넌트 재사용)
-│  │  │  ├─ MarketDetailPage.tsx    // 장터 상품 상세(구매/교환요청)
-│  │  │  ├─ MarketFormPage.tsx      // 등록/수정
-│  │  │  └─ ExchangeInboxPage.tsx   // 교환 요청함(수락/거절/상태)
+│  │  │  ├─ MarketListPage.jsx      // 장터 목록(샵 컴포넌트 재사용)
+│  │  │  ├─ MarketDetailPage.jsx    // 장터 상품 상세(구매/교환요청)
+│  │  │  ├─ MarketFormPage.jsx      // 등록/수정
+│  │  │  └─ ExchangeInboxPage.jsx   // 교환 요청함(수락/거절/상태)
 │  │  ├─ chat/
-│  │  │  └─ ChatRoomPage.tsx    // 1:1 채팅 페이지(Socket.IO)
+│  │  │  └─ ChatRoomPage.jsx    // 1:1 채팅 페이지(Socket.IO)
 │  │  └─ admin/
-│  │     ├─ AdminLoginPage.tsx
-│  │     ├─ DashboardPage.tsx   // KPI/기부현황/주문요약
-│  │     ├─ MemberPage.tsx      // 회원 조회/관리
-│  │     ├─ PostPage.tsx        // 게시글 CRUD
-│  │     ├─ ProductPage.tsx     // 상품 등록/수정
-│  │     ├─ OrderAdminPage.tsx  // 전체 주문 조회/수정
-│  │     └─ QnaAdminPage.tsx    // 문의글 조회/답변
+│  │     ├─ AdminLoginPage.jsx
+│  │     ├─ DashboardPage.jsx   // KPI/기부현황/주문요약
+│  │     ├─ MemberPage.jsx      // 회원 조회/관리
+│  │     ├─ PostPage.jsx        // 게시글 CRUD
+│  │     ├─ ProductPage.jsx     // 상품 등록/수정
+│  │     ├─ OrderAdminPage.jsx  // 전체 주문 조회/수정
+│  │     └─ QnaAdminPage.jsx    // 문의글 조회/답변
 │  ├─ components/               // 재사용 UI 컴포넌트
 │  │  ├─ layout/
-│  │  │  ├─ GuestLayout.tsx     // 헤더 최소(회원가입/로그인 링크)
-│  │  │  ├─ UserLayout.tsx
-│  │  │  └─ AdminLayout.tsx
+│  │  │  ├─ GuestLayout.jsx     // 헤더 최소(회원가입/로그인 링크)
+│  │  │  ├─ UserLayout.jsx
+│  │  │  └─ AdminLayout.jsx
 │  │  ├─ shop/                  // 샵/장터 공용 컴포넌트
-│  │  │  ├─ ProductCard.tsx     // 카드 UI (가격=포인트)
-│  │  │  ├─ ProductGrid.tsx     // 목록 그리드
-│  │  │  ├─ ProductFilter.tsx   // 카테고리/정렬
-│  │  │  └─ CheckoutPanel.tsx   // 내부 포인트 결제 패널
+│  │  │  ├─ ProductCard.jsx     // 카드 UI (가격=포인트)
+│  │  │  ├─ ProductGrid.jsx     // 목록 그리드
+│  │  │  ├─ ProductFilter.jsx   // 카테고리/정렬
+│  │  │  └─ CheckoutPanel.jsx   // 내부 포인트 결제 패널
 │  │  ├─ point/
-│  │  │  ├─ EarnPanel.tsx       // 대중교통/자전거 인증 UI
-│  │  │  └─ DonatePanel.tsx     // 기부 UI(+리워드 배지/쿠폰)
+│  │  │  ├─ EarnPanel.jsx       // 대중교통/자전거 인증 UI
+│  │  │  └─ DonatePanel.jsx     // 기부 UI(+리워드 배지/쿠폰)
 │  │  ├─ map/
-│  │  │  └─ BinMap.tsx          // 수거함 지도 컴포넌트
+│  │  │  └─ BinMap.jsx          // 수거함 지도 컴포넌트
 │  │  ├─ chat/
-│  │  │  ├─ ChatWindow.tsx      // 메시지 리스트/입력창
-│  │  │  └─ ChatBadge.tsx       // 채팅 알림 배지
+│  │  │  ├─ ChatWindow.jsx      // 메시지 리스트/입력창
+│  │  │  └─ ChatBadge.jsx       // 채팅 알림 배지
 │  │  ├─ common/
-│  │  │  ├─ GuardLink.tsx       // 접근가드 링크(게스트 → 로그인 유도)
-│  │  │  ├─ Pagination.tsx
-│  │  │  ├─ Spinner.tsx
-│  │  │  ├─ Empty.tsx
-│  │  │  └─ ConfirmModal.tsx
+│  │  │  ├─ GuardLink.jsx       // 접근가드 링크(게스트 → 로그인 유도)
+│  │  │  ├─ Pagination.jsx
+│  │  │  ├─ Spinner.jsx
+│  │  │  ├─ Empty.jsx
+│  │  │  └─ ConfirmModal.jsx
 │  ├─ hooks/                    // 커스텀 훅 (useAuth, useSocket 등)
 │  ├─ utils/                    // jwt 파서, 포맷터, 권한 헬퍼
 │  ├─ styles/                   // SCSS/CSS (부트스트랩 유틸 중심)
-│  ├─ main.tsx
+│  ├─ main.jsx
 │  └─ index.html
 └─ .env                         // VITE_API_BASE 등(클라 노출 값만)
 
@@ -101,57 +101,57 @@ re-earth-frontend/
 
 RE-Earth-api/
 ├─ src/
-│  ├─ app.ts                   // Express 부트스트랩(라우팅/미들웨어/에러)
-│  ├─ server.ts                // http + socket.io 서버 구동
+│  ├─ app.js                   // Express 부트스트랩(라우팅/미들웨어/에러)
+│  ├─ server.js                // http + socket.io 서버 구동
 │  ├─ config/
-│  │  ├─ env.ts                // .env 로더
-│  │  ├─ db.ts                 // Sequelize 연결
-│  │  ├─ logger.ts             // winston 로거
-│  │  └─ swagger.ts            // API 문서 설정
+│  │  ├─ env.js                // .env 로더
+│  │  ├─ db.js                 // Sequelize 연결
+│  │  ├─ logger.js             // winston 로거
+│  │  └─ swagger.js            // API 문서 설정
 │  ├─ auth/
-│  │  ├─ passport.ts           // JWT, Google, Kakao 전략 설정  ← *OAuth 포함*
-│  │  └─ middleware.ts         // isAuth, isAdmin, rateLimit 등
+│  │  ├─ passport.js           // JWT, Google, Kakao 전략 설정  ← *OAuth 포함*
+│  │  └─ middleware.js         // isAuth, isAdmin, rateLimit 등
 │  ├─ models/                  // Sequelize 모델들
-│  │  ├─ User.ts
-│  │  ├─ Item.ts               // 포인트 샵 상품
-│  │  ├─ Order.ts, OrderItem.ts
-│  │  ├─ Post.ts, Qna.ts
-│  │  ├─ PointLedger.ts        // 포인트 원장(적립/사용/기부 기록)
-│  │  ├─ Donation.ts           // 기부 기록(+리워드)
-│  │  ├─ MarketItem.ts         // 장터 상품
-│  │  ├─ ExchangeRequest.ts    // 교환 요청(상태: PENDING/ACCEPTED/REJECTED)
-│  │  ├─ ChatRoom.ts, ChatMsg.ts // 거래 쌍 1:1 채팅
-│  │  └─ BinLocation.ts        // 의류수거함 좌표(캐시/미러링)
+│  │  ├─ User.js
+│  │  ├─ Item.js               // 포인트 샵 상품
+│  │  ├─ Order.js, OrderItem.js
+│  │  ├─ Post.js, Qna.js
+│  │  ├─ PointLedger.js        // 포인트 원장(적립/사용/기부 기록)
+│  │  ├─ Donation.js           // 기부 기록(+리워드)
+│  │  ├─ MarketItem.js         // 장터 상품
+│  │  ├─ ExchangeRequest.js    // 교환 요청(상태: PENDING/ACCEPTED/REJECTED)
+│  │  ├─ ChatRoom.js, ChatMsg.js // 거래 쌍 1:1 채팅
+│  │  └─ BinLocation.js        // 의류수거함 좌표(캐시/미러링)
 │  ├─ routes/                  // REST 엔드포인트
-│  │  ├─ auth.route.ts         // 로그인/회원가입/OAuth 콜백
-│  │  ├─ users.route.ts        // 내정보/관리자 회원관리
-│  │  ├─ items.route.ts        // 샵 상품 CRUD(관리자)
-│  │  ├─ orders.route.ts       // 주문 생성/취소(포인트 결제)
-│  │  ├─ points.route.ts       // 적립/조회/기부/리워드
-│  │  ├─ posts.route.ts        // 게시글, QnA
-│  │  ├─ kpi.route.ts          // KPI/기부현황
-│  │  ├─ market.route.ts       // 장터 CRUD
-│  │  └─ exchange.route.ts     // 교환 요청/응답
+│  │  ├─ auth.route.js         // 로그인/회원가입/OAuth 콜백
+│  │  ├─ users.route.js        // 내정보/관리자 회원관리
+│  │  ├─ items.route.js        // 샵 상품 CRUD(관리자)
+│  │  ├─ orders.route.js       // 주문 생성/취소(포인트 결제)
+│  │  ├─ points.route.js       // 적립/조회/기부/리워드
+│  │  ├─ posts.route.js        // 게시글, QnA
+│  │  ├─ kpi.route.js          // KPI/기부현황
+│  │  ├─ market.route.js       // 장터 CRUD
+│  │  └─ exchange.route.js     // 교환 요청/응답
 │  ├─ services/                // 비즈니스 로직 계층
-│  │  ├─ auth.service.ts
-│  │  ├─ point.service.ts      // 포인트 정합/트랜잭션 처리
-│  │  ├─ order.service.ts
-│  │  ├─ donation.service.ts
-│  │  ├─ market.service.ts
-│  │  └─ kpi.service.ts
+│  │  ├─ auth.service.js
+│  │  ├─ point.service.js      // 포인트 정합/트랜잭션 처리
+│  │  ├─ order.service.js
+│  │  ├─ donation.service.js
+│  │  ├─ market.service.js
+│  │  └─ kpi.service.js
 │  ├─ adapters/                // 외부 API 어댑터 (티머니/카카오/공공데이터)
-│  │  ├─ tmoney.adapter.ts
-│  │  ├─ kakao.adapter.ts      // OAuth, 지도(좌표 변환/정규화)
-│  │  └─ publicdata.adapter.ts // 수거함 API → BinLocation 저장/조회
+│  │  ├─ tmoney.adapter.js
+│  │  ├─ kakao.adapter.js      // OAuth, 지도(좌표 변환/정규화)
+│  │  └─ publicdata.adapter.js // 수거함 API → BinLocation 저장/조회
 │  ├─ sockets/
-│  │  ├─ index.ts              // io 초기화, 네임스페이스/미들웨어
-│  │  └─ trade.namespace.ts    // 거래관련(장터 교환/채팅) 이벤트 정의
+│  │  ├─ index.js              // io 초기화, 네임스페이스/미들웨어
+│  │  └─ trade.namespace.js    // 거래관련(장터 교환/채팅) 이벤트 정의
 │  ├─ middlewares/
-│  │  ├─ error.ts              // 에러 핸들러
-│  │  └─ upload.ts             // multer (상품/장터 이미지)
+│  │  ├─ error.js              // 에러 핸들러
+│  │  └─ upload.js             // multer (상품/장터 이미지)
 │  └─ utils/
-│     ├─ jwt.ts                // JWT 발급/검증
-│     ├─ geo.ts                // GPS 검증/거리계산(Haversine)
-│     └─ types.ts
+│     ├─ jwt.js                // JWT 발급/검증
+│     ├─ geo.js                // GPS 검증/거리계산(Haversine)
+│     └─ types.js
 ├─ .env                        // DB_URL, JWT_SECRET, OAUTH KEYS 등
 └─ sequelize.config.js

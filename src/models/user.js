@@ -76,5 +76,13 @@ module.exports = class User extends Sequelize.Model {
       this.hasMany(db.Report, { as: 'Reports', foreignKey: 'reporterId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
       this.hasMany(db.Report, { as: 'HandledReports', foreignKey: 'handlerId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
       this.hasMany(db.ReportComment, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+
+      this.hasOne(db.AdminDashboard, { foreignKey: 'adminId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+
+      this.hasMany(db.Notification, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.hasMany(db.Donation, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+
+      this.hasMany(db.EcoActionLog, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      // this.hasMany(db.EcoActionLog, { as: 'VerifiedLogs', foreignKey: 'verifiedBy', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

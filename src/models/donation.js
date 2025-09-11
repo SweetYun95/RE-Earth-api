@@ -44,17 +44,7 @@ module.exports = class Donation extends Sequelize.Model {
    }
 
    static associate(db) {
-      this.belongsTo(db.User, {
-         foreignKey: 'userId',
-         targetKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
-      this.hasMany(db.DonationItem, {
-         foreignKey: 'donationId',
-         sourceKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
+      this.belongsTo(db.User, { foreignKey: 'userId', targetKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.hasMany(db.DonationItem, { foreignKey: 'donationId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

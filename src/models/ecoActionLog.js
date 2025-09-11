@@ -81,24 +81,9 @@ module.exports = class EcoActionLog extends Sequelize.Model {
    }
 
    static associate(db) {
-      this.belongsTo(db.EcoAction, {
-         foreignKey: 'ecoActionId',
-         targetKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
-      this.belongsTo(db.User, {
-         foreignKey: 'userId',
-         targetKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
-      this.belongsTo(db.User, {
-         as: 'Verifier', // 관리자(검증자)
-         foreignKey: 'verifiedBy',
-         targetKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
+      this.belongsTo(db.EcoAction, { foreignKey: 'ecoActionId', targetKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.belongsTo(db.User, { foreignKey: 'userId', targetKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.belongsTo(db.User, { as: 'Verifier', foreignKey: 'verifiedBy', targetKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' }) // 관리자(검증자)
+      this.hasMany(db.Point, { foreignKey: 'ecoActionLogId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

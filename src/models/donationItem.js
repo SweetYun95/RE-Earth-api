@@ -32,11 +32,6 @@ module.exports = class DonationItem extends Sequelize.Model {
    }
 
    static associate(db) {
-      this.belongsTo(db.Donation, {
-         foreignKey: 'donationId',
-         targetKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
+      this.belongsTo(db.Donation, { foreignKey: 'donationId', targetKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

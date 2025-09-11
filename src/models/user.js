@@ -83,6 +83,9 @@ module.exports = class User extends Sequelize.Model {
       this.hasMany(db.Donation, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
 
       this.hasMany(db.EcoActionLog, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-      // this.hasMany(db.EcoActionLog, { as: 'VerifiedLogs', foreignKey: 'verifiedBy', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.hasMany(db.EcoActionLog, { as: 'VerifiedLogs', foreignKey: 'verifiedBy', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+
+      this.hasMany(db.Point, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+      this.hasMany(db.PointOrder, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

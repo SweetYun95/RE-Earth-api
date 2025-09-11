@@ -5,12 +5,31 @@ module.exports = class EcoAction extends Sequelize.Model {
    static init(sequelize) {
       return super.init(
          {
-            code: { type: Sequelize.STRING(80), allowNull: false },
-            description: { type: Sequelize.TEXT, allowNull: true },
-            unit: { type: Sequelize.ENUM('KG', 'KM', 'EA'), allowNull: false }, // 측정기준단위
-            carbonUnit: { type: Sequelize.INTEGER, allowNull: false }, // 단위당 탄소절감량
-            pointUnit: { type: Sequelize.INTEGER, allowNull: false }, // 단위당 포인트
-            active: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true },
+            code: {
+               type: Sequelize.STRING(80),
+               allowNull: false,
+            },
+            description: {
+               type: Sequelize.TEXT,
+               allowNull: true,
+            },
+            unit: {
+               type: Sequelize.ENUM('KG', 'KM', 'EA'),
+               allowNull: false,
+            }, // 측정기준단위
+            carbonUnit: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+            }, // 단위당 탄소절감량
+            pointUnit: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+            }, // 단위당 포인트
+            active: {
+               type: Sequelize.BOOLEAN,
+               allowNull: false,
+               defaultValue: true,
+            },
          },
          {
             sequelize,
@@ -26,11 +45,6 @@ module.exports = class EcoAction extends Sequelize.Model {
    }
 
    static associate(db) {
-      this.hasMany(db.EcoActionLog, {
-         foreignKey: 'ecoActionId',
-         sourceKey: 'id',
-         onDelete: 'CASCADE',
-         onUpdate: 'CASCADE',
-      })
+      this.hasMany(db.EcoActionLog, { foreignKey: 'ecoActionId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
    }
 }

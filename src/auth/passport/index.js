@@ -5,24 +5,25 @@ const google = require('./googleStrategy')
 const User = require('../../models/user')
 
 module.exports = () => {
-   // 로그인 성공 시 유저 정보를 세션에 저장
+   // 로그인 성공 시 세션에 최소 정보만 저장
    passport.serializeUser((user, done) => {
-      // user.id만 저장 (세션의 용량 절약을 위해)
       done(null, user.id)
    })
 
-   // 매 요청 시 세션에 저장된 id를 이용해 유저 정보 복원
-   passport.deserializeUser((id, done) => {
-   // 세션에 저장된 id를 기반으로 유저 정보를 복원
-      User.findOne({ where: { id } })
-         .then((user) => done(null, user)) // 세션에서 유저 정보를 복원
-         .catch((err) => done(err)) // 오류 발생 시 에러 반환
+   // 매 요청마다 id로 유저 복원 (비밀번호 제외)
+   passport.deserializeUser(async (id, done) => {
+      try {
+         const user = await User.findByPk(id, {
+            attributes: { exclude: ['password'] },
+         })
+         return done(null, user)
+      } catch (err) {
+         return done(err)
+      }
    })
 
-   // 로컬 로그인 전략 설정
+   // 전략 등록
    local()
-   // 구글 로그인 전략 설정
    google()
-   // 카카오 로그인 전략 설정 (추후 구현 예정)
    // kakao()
 }

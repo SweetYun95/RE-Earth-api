@@ -12,11 +12,11 @@ module.exports = class QnaComment extends Sequelize.Model {
             qnaId: {
                type: Sequelize.INTEGER,
                allowNull: false,
-            }, 
+            }, // FK → qnas.id
             adminId: {
                type: Sequelize.INTEGER,
                allowNull: false,
-            },
+            }, // FK → users.id (관리자)
          },
          {
             sequelize,
@@ -26,7 +26,6 @@ module.exports = class QnaComment extends Sequelize.Model {
             paranoid: false,
             charset: 'utf8mb4',
             collate: 'utf8mb4_general_ci',
-            
          }
       )
    }

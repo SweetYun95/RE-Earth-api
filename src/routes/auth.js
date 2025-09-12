@@ -6,6 +6,7 @@ const User = require('../models/user')
 
 const router = express.Router()
 
+// ──────────────────────────────────────────────────────────────
 // ENV Helpers
 const parseScopes = (s = '') =>
    s
@@ -15,10 +16,15 @@ const parseScopes = (s = '') =>
 const GOOGLE_SCOPES = parseScopes(process.env.GOOGLE_SCOPE || 'profile,email')
 const KAKAO_SCOPES = parseScopes(process.env.KAKAO_SCOPE || 'profile_nickname,account_email')
 
+// 선택(리다이렉트 UX를 원할 때 사용)
+const FRONTEND_URL = process.env.FRONTEND_APP_URL || process.env.CLIENT_URL
+
+// ──────────────────────────────────────────────────────────────
 // Password policy: 영문 + 숫자 + 특수문자 각각 1개 이상, 길이 8자 이상 (공백 불가)
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,}$/
 const isValidPassword = (pw) => PASSWORD_REGEX.test(pw || '')
 
+// ──────────────────────────────────────────────────────────────
 // 회원가입 (local)
 router.post('/join', async (req, res, next) => {
    try {
@@ -74,6 +80,7 @@ router.post('/join', async (req, res, next) => {
    }
 })
 
+// ──────────────────────────────────────────────────────────────
 // 로그인 (local)
 router.post('/login', async (req, res, next) => {
    passport.authenticate('local', (authError, user, info) => {
@@ -105,6 +112,7 @@ router.post('/login', async (req, res, next) => {
    })(req, res, next)
 })
 
+// ──────────────────────────────────────────────────────────────
 // 소셜 로그인: Google (scopes from .env)
 router.get('/google', passport.authenticate('google', { scope: GOOGLE_SCOPES }))
 
@@ -126,15 +134,15 @@ router.get('/google/callback', (req, res, next) => {
             loginError.message = '구글 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         return res.json({
-            success: true,
-            message: '구글 로그인 성공',
-            user: { id: user.id, name: user.name, role: user.role },
-         })
+         // JSON 응답 방식
+         return res.json({ success: true, message: '구글 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
+         // 리다이렉트 UX를 원하면 아래 주석 해제
+         // return res.redirect(`${FRONTEND_URL || ''}/auth/callback?ok=1&provider=google`)
       })
    })(req, res, next)
 })
 
+// ──────────────────────────────────────────────────────────────
 // 소셜 로그인: Kakao (scopes from .env)
 router.get('/kakao', passport.authenticate('kakao', { scope: KAKAO_SCOPES }))
 
@@ -156,15 +164,15 @@ router.get('/kakao/callback', (req, res, next) => {
             loginError.message = '카카오 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         return res.json({
-            success: true,
-            message: '카카오 로그인 성공',
-            user: { id: user.id, name: user.name, role: user.role },
-         })
+         // JSON 응답 방식
+         return res.json({ success: true, message: '카카오 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
+         // 리다이렉트 UX를 원하면 아래 주석 해제
+         // return res.redirect(`${FRONTEND_URL || ''}/auth/callback?ok=1&provider=kakao`)
       })
    })(req, res, next)
 })
 
+// ──────────────────────────────────────────────────────────────
 // 로그아웃
 router.get('/logout', async (req, res, next) => {
    req.logout((logoutError) => {
@@ -173,7 +181,6 @@ router.get('/logout', async (req, res, next) => {
          logoutError.message = '로그아웃 중 오류 발생'
          return next(logoutError)
       }
-
       return res.json({ success: true, message: '로그아웃에 성공했습니다.' })
    })
 })
@@ -181,7 +188,7 @@ router.get('/logout', async (req, res, next) => {
 // 로그인 상태확인
 router.get('/status', async (req, res, next) => {
    try {
-      if (req.isAuthenticated()) {
+      if (req.isAuthenticated?.() && req.user) {
          return res.status(200).json({
             isAuthenticated: true,
             user: { id: req.user.id, name: req.user.name, role: req.user.role },

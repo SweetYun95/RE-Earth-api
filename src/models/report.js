@@ -24,7 +24,7 @@ module.exports = class Report extends Sequelize.Model {
             reporterId: {
                type: Sequelize.INTEGER,
                allowNull: false,
-            },
+            }, // FK → users.id
          },
          {
             sequelize,

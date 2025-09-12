@@ -7,7 +7,7 @@ const session = require('express-session') // 세션 관리 미들웨어
 const passport = require('passport') // 인증 미들웨어
 require('dotenv').config() // 환경 변수 관리
 const cors = require('cors') // CORS 미들웨어 -> ★api 서버는 반드시 설정해줘야 한다
-const { swaggerUi, swaggerSpec } = require('./swagger')
+// const { swaggerUi, swaggerSpec } = require('./swagger') // ⚠️ Swagger 모듈 미구현이므로 임시 비활성화
 // ⚠️ 아직 Socket.IO 기능이 없으므로 관련 코드는 주석 처리합니다.
 // const http = require('http') // http 모듈
 // const socketIO = require('./socket') // Socket.IO 초기화 함수
@@ -17,7 +17,7 @@ const indexRouter = require('./routes')
 const authRouter = require('./routes/auth')
 
 const { sequelize } = require('./models')
-const passportConfig = require('./passport')
+const passportConfig = require('./auth/passport')
 
 const app = express()
 passportConfig()
@@ -34,7 +34,7 @@ sequelize
    })
 
 // 미들웨어 설정
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs (Swagger 준비되면 해제)
 app.use(
    cors({
       origin: process.env.FRONTEND_APP_URL, // 특정 주소만 request 허용

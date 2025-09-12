@@ -16,7 +16,7 @@ module.exports = class ReportComment extends Sequelize.Model {
             adminId: {
                type: Sequelize.INTEGER,
                allowNull: false,
-            }, // 답변자(관리자) FK → users.id
+            }, // FK → users.id (관리자)
          },
          {
             sequelize,

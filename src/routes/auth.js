@@ -6,7 +6,16 @@ const User = require('../models/user')
 
 const router = express.Router()
 
-// 영문 + 숫자 + 특수문자 각각 1개 이상, 길이 8자 이상 (공백 불가)
+// ENV Helpers
+const parseScopes = (s = '') =>
+   s
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
+const GOOGLE_SCOPES = parseScopes(process.env.GOOGLE_SCOPE || 'profile,email')
+const KAKAO_SCOPES = parseScopes(process.env.KAKAO_SCOPE || 'profile_nickname,account_email')
+
+// Password policy: 영문 + 숫자 + 특수문자 각각 1개 이상, 길이 8자 이상 (공백 불가)
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,}$/
 const isValidPassword = (pw) => PASSWORD_REGEX.test(pw || '')
 
@@ -96,11 +105,9 @@ router.post('/login', async (req, res, next) => {
    })(req, res, next)
 })
 
-// 소셜 로그인: Google
-// 시작: /auth/google
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+// 소셜 로그인: Google (scopes from .env)
+router.get('/google', passport.authenticate('google', { scope: GOOGLE_SCOPES }))
 
-// 콜백: /auth/google/callback
 router.get('/google/callback', (req, res, next) => {
    passport.authenticate('google', (err, user, info) => {
       if (err) {
@@ -128,11 +135,9 @@ router.get('/google/callback', (req, res, next) => {
    })(req, res, next)
 })
 
-// 소셜 로그인: Kakao
-// 시작: /auth/kakao
-router.get('/kakao', passport.authenticate('kakao', { scope: ['profile_nickname', 'account_email'] }))
+// 소셜 로그인: Kakao (scopes from .env)
+router.get('/kakao', passport.authenticate('kakao', { scope: KAKAO_SCOPES }))
 
-// 콜백: /auth/kakao/callback
 router.get('/kakao/callback', (req, res, next) => {
    passport.authenticate('kakao', (err, user, info) => {
       if (err) {

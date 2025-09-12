@@ -2,7 +2,7 @@
 const passport = require('passport')
 const local = require('./localStrategy')
 const google = require('./googleStrategy')
-// const kakao = require('./kakaoStrategy')
+const kakao = require('./kakaoStrategy')
 const User = require('../../models/user')
 
 module.exports = () => {
@@ -26,5 +26,5 @@ module.exports = () => {
    // 전략 등록
    local()
    google()
-   // kakao()
+   kakao()
 }

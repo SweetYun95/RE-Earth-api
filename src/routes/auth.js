@@ -1,3 +1,4 @@
+// RE-Earth-api/src/routes/auth.js
 const express = require('express')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
@@ -9,7 +10,7 @@ const router = express.Router()
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,}$/
 const isValidPassword = (pw) => PASSWORD_REGEX.test(pw || '')
 
-// 회원가입
+// 회원가입 (local)
 router.post('/join', async (req, res, next) => {
    try {
       let { email, name, address, password } = req.body
@@ -42,7 +43,7 @@ router.post('/join', async (req, res, next) => {
       // 비밀번호 해시
       const hash = await bcrypt.hash(password, 12)
 
-      // 사용자 생성 (provider/local 가정)
+      // 사용자 생성 (provider: local)
       const newUser = await User.create({
          email,
          name,
@@ -64,7 +65,7 @@ router.post('/join', async (req, res, next) => {
    }
 })
 
-// 로그인
+// 로그인 (local)
 router.post('/login', async (req, res, next) => {
    passport.authenticate('local', (authError, user, info) => {
       if (authError) {
@@ -89,6 +90,70 @@ router.post('/login', async (req, res, next) => {
          return res.json({
             success: true,
             message: '로그인 성공',
+            user: { id: user.id, name: user.name, role: user.role },
+         })
+      })
+   })(req, res, next)
+})
+
+// 소셜 로그인: Google
+// 시작: /auth/google
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+
+// 콜백: /auth/google/callback
+router.get('/google/callback', (req, res, next) => {
+   passport.authenticate('google', (err, user, info) => {
+      if (err) {
+         err.status = 500
+         err.message = '구글 인증 중 오류 발생'
+         return next(err)
+      }
+      if (!user) {
+         const e = new Error(info?.message || '구글 로그인 실패')
+         e.status = 401
+         return next(e)
+      }
+      req.login(user, (loginError) => {
+         if (loginError) {
+            loginError.status = 500
+            loginError.message = '구글 로그인 세션 처리 중 오류 발생'
+            return next(loginError)
+         }
+         return res.json({
+            success: true,
+            message: '구글 로그인 성공',
+            user: { id: user.id, name: user.name, role: user.role },
+         })
+      })
+   })(req, res, next)
+})
+
+// 소셜 로그인: Kakao
+// 시작: /auth/kakao
+router.get('/kakao', passport.authenticate('kakao', { scope: ['profile_nickname', 'account_email'] }))
+
+// 콜백: /auth/kakao/callback
+router.get('/kakao/callback', (req, res, next) => {
+   passport.authenticate('kakao', (err, user, info) => {
+      if (err) {
+         err.status = 500
+         err.message = '카카오 인증 중 오류 발생'
+         return next(err)
+      }
+      if (!user) {
+         const e = new Error(info?.message || '카카오 로그인 실패')
+         e.status = 401
+         return next(e)
+      }
+      req.login(user, (loginError) => {
+         if (loginError) {
+            loginError.status = 500
+            loginError.message = '카카오 로그인 세션 처리 중 오류 발생'
+            return next(loginError)
+         }
+         return res.json({
+            success: true,
+            message: '카카오 로그인 성공',
             user: { id: user.id, name: user.name, role: user.role },
          })
       })

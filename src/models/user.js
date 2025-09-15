@@ -53,9 +53,7 @@ module.exports = class User extends Sequelize.Model {
 
       // ─ 문의/신고
       this.hasMany(db.Qna, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-      // ❌ HandledReports(userId=handlerId) 제거
       this.hasMany(db.Report, { as: 'Reports', foreignKey: 'reporterId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-      // ❌ QnaComment/ReportComment 의 userId 참조 제거 → 관리자 기준으로 연결
       this.hasMany(db.QnaComment, { as: 'AdminQnaComments', foreignKey: 'adminId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
       this.hasMany(db.ReportComment, { as: 'AdminReportComments', foreignKey: 'adminId', sourceKey: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
 

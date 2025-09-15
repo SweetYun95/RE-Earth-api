@@ -19,7 +19,6 @@ module.exports = class User extends Sequelize.Model {
             name: { type: Sequelize.STRING(50), allowNull: false },
             password: { type: Sequelize.STRING(255), allowNull: true },
             address: { type: Sequelize.STRING(150), allowNull: false },
-            gender: { type: Sequelize.CHAR(1), allowNull: true, validate: { isIn: [['F', 'M']] } },
             userId: { type: Sequelize.STRING(50), allowNull: false, unique: true },
             role: { type: Sequelize.ENUM('ADMIN', 'USER'), allowNull: false, defaultValue: 'USER' },
             phoneNumber: { type: Sequelize.STRING(20), allowNull: true },

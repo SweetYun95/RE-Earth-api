@@ -2,41 +2,38 @@
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const bcrypt = require('bcrypt')
-const User2 = require('../../models/user')
+const User = require('../../models/user')
 
 module.exports = () => {
    passport.use(
       new LocalStrategy(
          {
-            // 가입/로그인 폼에서 email, password를 받는 기준으로 통일
-            usernameField: 'email',
+            // ✅ 프론트에서 "idOrEmail" 로 보냄 (아이디 또는 이메일 모두 허용)
+            usernameField: 'idOrEmail',
             passwordField: 'password',
-            passReqToCallback: false,
+            passReqToCallback: true,
          },
-         async (email, password, done) => {
+         async (req, idOrEmail, password, done) => {
             try {
-               email = (email || '').toLowerCase().trim()
-               const user = await User2.findOne({ where: { email, provider: 'local' } })
-
-               if (!user) {
-                  return done(null, false, { message: '가입되지 않은 이메일이거나 소셜 계정입니다.' })
+               const raw = String(idOrEmail || '').trim()
+               if (!raw || !password) {
+                  return done(null, false, { message: 'Missing credentials' })
                }
 
-               if (!user.password) {
-                  // 소셜 계정이 로컬로 로그인 시도하는 경우 방어
-                  return done(null, false, { message: '이 계정은 소셜 로그인으로 가입되었습니다.' })
-               }
+               const isEmail = raw.includes('@')
+               const where = isEmail
+                  ? { email: raw.toLowerCase(), provider: 'LOCAL' } // ← provider 대문자
+                  : { userId: raw, provider: 'LOCAL' }
+
+               const user = await User.findOne({ where })
+               if (!user) return done(null, false, { message: '가입되지 않은 계정이거나 소셜 계정입니다.' })
+               if (!user.password) return done(null, false, { message: '이 계정은 소셜 로그인으로 가입되었습니다.' })
 
                const ok = await bcrypt.compare(password, user.password)
-               if (!ok) {
-                  return done(null, false, { message: '비밀번호가 일치하지 않습니다.' })
-               }
+               if (!ok) return done(null, false, { message: '비밀번호가 일치하지 않습니다.' })
 
                return done(null, user)
             } catch (error) {
-               if (error.name === 'SequelizeConnectionError') {
-                  return done(null, false, { message: '데이터베이스 연결 오류' })
-               }
                return done(error)
             }
          }

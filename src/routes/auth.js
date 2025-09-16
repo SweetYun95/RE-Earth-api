@@ -6,31 +6,30 @@ const User = require('../models/user')
 
 const router = express.Router()
 
-// ──────────────────────────────────────────────────────────────
-// ENV Helpers
-const parseScopes = (s = '') =>
-   s
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean)
-const GOOGLE_SCOPES = parseScopes(process.env.GOOGLE_SCOPE || 'profile,email')
-const KAKAO_SCOPES = parseScopes(process.env.KAKAO_SCOPE || 'profile_nickname,account_email')
-
-// 선택(리다이렉트 UX를 원할 때 사용)
-const FRONTEND_URL = process.env.FRONTEND_APP_URL || process.env.CLIENT_URL
-
-// ──────────────────────────────────────────────────────────────
-// Password policy: 영문 + 숫자 + 특수문자 각각 1개 이상, 길이 8자 이상 (공백 불가)
+// ───────── helpers: 비번/휴대폰/검증 ─────────
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,}$/
 const isValidPassword = (pw) => PASSWORD_REGEX.test(pw || '')
 
-// ──────────────────────────────────────────────────────────────
-// 회원가입 (local)
+// userId 4~20, 영문/숫자만
+const USERID_REGEX = /^[A-Za-z0-9]{4,20}$/
+// 닉네임 2~20, 공백 금지
+const NICK_REGEX = /^\S{2,20}$/
+
+// 010-1234-5678 형태로 정규화
+const onlyDigits = (s) => String(s || '').replace(/\D/g, '')
+const formatKrMobile = (raw) => {
+   const d = onlyDigits(raw)
+   if (!/^01[016789]\d{7,8}$/.test(d)) return null // 10~11자리 휴대폰만 허용
+   // 11자리: 3-4-4 / 10자리: 3-3-4
+   if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`
+   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`
+}
+
+// ───────── 회원가입 (local) ─────────
 router.post('/join', async (req, res, next) => {
    try {
-      let { email, name, address, password } = req.body
+      let { email, name, address, password, phoneNumber, phone1, phone2, phone3 } = req.body
 
-      // 기본 유효성
       email = (email || '').trim().toLowerCase()
       name = (name || '').trim()
       address = (address || '').trim()
@@ -40,7 +39,6 @@ router.post('/join', async (req, res, next) => {
          err.status = 400
          return next(err)
       }
-
       if (!isValidPassword(password)) {
          const err = new Error('비밀번호는 영문, 숫자, 특수문자를 각각 포함하여 8자 이상이어야 합니다.')
          err.status = 400
@@ -51,21 +49,29 @@ router.post('/join', async (req, res, next) => {
       const exUser = await User.findOne({ where: { email } })
       if (exUser) {
          const error = new Error('이미 존재하는 사용자입니다.')
-         error.status = 409 // Conflict
+         error.status = 409
          return next(error)
       }
 
-      // 비밀번호 해시
+      // 휴대폰 조립/정규화 (phoneNumber 단일값 또는 phone1-3 조합 둘 다 지원)
+      const rawPhone = phoneNumber || [phone1, phone2, phone3].filter((v) => (v ?? '') !== '').join('-') || ''
+      const normalizedPhone = rawPhone ? formatKrMobile(rawPhone) : null
+      if (rawPhone && !normalizedPhone) {
+         const err = new Error('휴대폰 번호 형식이 올바르지 않습니다.')
+         err.status = 400
+         return next(err)
+      }
+
       const hash = await bcrypt.hash(password, 12)
 
-      // 사용자 생성 (provider: local)
       const newUser = await User.create({
          email,
          name,
          password: hash,
          role: 'USER',
          address,
-         provider: 'local',
+         provider: 'LOCAL', // 모델에서 대문자 ENUM
+         phoneNumber: normalizedPhone,
       })
 
       return res.status(201).json({
@@ -80,8 +86,7 @@ router.post('/join', async (req, res, next) => {
    }
 })
 
-// ──────────────────────────────────────────────────────────────
-// 로그인 (local)
+// ───────── 로그인 (local) ─────────
 router.post('/login', async (req, res, next) => {
    passport.authenticate('local', (authError, user, info) => {
       if (authError) {
@@ -89,33 +94,33 @@ router.post('/login', async (req, res, next) => {
          authError.message = '인증 중 오류 발생'
          return next(authError)
       }
-
       if (!user) {
          const error = new Error(info?.message || '로그인 실패')
          error.status = 401
          return next(error)
       }
-
       req.login(user, (loginError) => {
          if (loginError) {
             loginError.status = 500
             loginError.message = '로그인 중 오류 발생'
             return next(loginError)
          }
-
-         return res.json({
-            success: true,
-            message: '로그인 성공',
-            user: { id: user.id, name: user.name, role: user.role },
-         })
+         return res.json({ success: true, message: '로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
       })
    })(req, res, next)
 })
 
-// ──────────────────────────────────────────────────────────────
-// 소셜 로그인: Google (scopes from .env)
-router.get('/google', passport.authenticate('google', { scope: GOOGLE_SCOPES }))
+// ───────── 소셜 로그인 (구글/카카오) ─────────
+const parseScopes = (s = '') =>
+   s
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
+const GOOGLE_SCOPES = parseScopes(process.env.GOOGLE_SCOPE || 'profile,email')
+const KAKAO_SCOPES = parseScopes(process.env.KAKAO_SCOPE || 'profile_nickname,account_email')
 
+// 구글
+router.get('/google', passport.authenticate('google', { scope: GOOGLE_SCOPES }))
 router.get('/google/callback', (req, res, next) => {
    passport.authenticate('google', (err, user, info) => {
       if (err) {
@@ -134,18 +139,13 @@ router.get('/google/callback', (req, res, next) => {
             loginError.message = '구글 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         // JSON 응답 방식
          return res.json({ success: true, message: '구글 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
-         // 리다이렉트 UX를 원하면 아래 주석 해제
-         // return res.redirect(`${FRONTEND_URL || ''}/auth/callback?ok=1&provider=google`)
       })
    })(req, res, next)
 })
 
-// ──────────────────────────────────────────────────────────────
-// 소셜 로그인: Kakao (scopes from .env)
+// 카카오
 router.get('/kakao', passport.authenticate('kakao', { scope: KAKAO_SCOPES }))
-
 router.get('/kakao/callback', (req, res, next) => {
    passport.authenticate('kakao', (err, user, info) => {
       if (err) {
@@ -164,16 +164,66 @@ router.get('/kakao/callback', (req, res, next) => {
             loginError.message = '카카오 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         // JSON 응답 방식
          return res.json({ success: true, message: '카카오 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
-         // 리다이렉트 UX를 원하면 아래 주석 해제
-         // return res.redirect(`${FRONTEND_URL || ''}/auth/callback?ok=1&provider=kakao`)
       })
    })(req, res, next)
 })
 
-// ──────────────────────────────────────────────────────────────
-// 로그아웃
+// ───────── 중복확인 API (★ 404 해결 포인트) ─────────
+router.post('/check-username', async (req, res, next) => {
+   try {
+      const userId = String(req.body.userId || '').trim()
+      if (!userId || !USERID_REGEX.test(userId)) {
+         const err = new Error('userId 형식이 올바르지 않습니다. (4~20자 영문/숫자)')
+         err.status = 400
+         return next(err)
+      }
+      const exists = await User.findOne({ where: { userId } })
+      return res.json({ available: !exists })
+   } catch (e) {
+      e.status = 500
+      e.message = '아이디 중복 확인 중 오류'
+      return next(e)
+   }
+})
+
+router.post('/check-nickname', async (req, res, next) => {
+   try {
+      const name = String(req.body.name || '').trim()
+      if (!name || !NICK_REGEX.test(name)) {
+         const err = new Error('닉네임 형식이 올바르지 않습니다. (공백 없는 2~20자)')
+         err.status = 400
+         return next(err)
+      }
+      const exists = await User.findOne({ where: { name } })
+      return res.json({ available: !exists })
+   } catch (e) {
+      e.status = 500
+      e.message = '닉네임 중복 확인 중 오류'
+      return next(e)
+   }
+})
+
+router.post('/check-email', async (req, res, next) => {
+   try {
+      const email = String(req.body.email || '')
+         .trim()
+         .toLowerCase()
+      if (!email) {
+         const err = new Error('이메일을 입력하세요.')
+         err.status = 400
+         return next(err)
+      }
+      const exists = await User.findOne({ where: { email } })
+      return res.json({ available: !exists })
+   } catch (e) {
+      e.status = 500
+      e.message = '이메일 중복 확인 중 오류'
+      return next(e)
+   }
+})
+
+// ───────── 로그아웃/상태 ─────────
 router.get('/logout', async (req, res, next) => {
    req.logout((logoutError) => {
       if (logoutError) {
@@ -185,14 +235,10 @@ router.get('/logout', async (req, res, next) => {
    })
 })
 
-// 로그인 상태확인
 router.get('/status', async (req, res, next) => {
    try {
       if (req.isAuthenticated?.() && req.user) {
-         return res.status(200).json({
-            isAuthenticated: true,
-            user: { id: req.user.id, name: req.user.name, role: req.user.role },
-         })
+         return res.status(200).json({ isAuthenticated: true, user: { id: req.user.id, name: req.user.name, role: req.user.role } })
       }
       return res.status(200).json({ isAuthenticated: false })
    } catch (error) {

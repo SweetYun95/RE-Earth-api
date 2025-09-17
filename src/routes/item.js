@@ -83,7 +83,13 @@ router.post('/', verifyToken, isAdmin, upload.array('img'), async (req, res, nex
 // 전체 상품 조회
 router.get('/', verifyToken, async (req, res, next) => {
    try {
+      const sellCategory = req.query.sellCategory
+      const where = {}
+      if (sellCategory) {
+         where.itemSellStatus = sellCategory
+      }
       const items = await Item.findAll({
+         where,
          order: [['createdAt', 'DESC']],
          include: [
             {
@@ -179,36 +185,4 @@ router.put('/:id', verifyToken, isAdmin, upload.array('img'), async (req, res, n
       next(error)
    }
 })
-
-// 상품 삭제
-router.delete('/:id', verifyToken, isAdmin, async (req, res, next) => {
-   try {
-      const { id } = req.params
-
-      const item = await Item.findByPk(id)
-      if (!item) {
-         const error = new Error('상품을 찾을 수 없습니다.')
-         error.status = 404
-         return next(error)
-      }
-
-      const images = await ItemImage.findAll({ where: { itemId: id } })
-      for (const img of images) {
-         const filepath = path.join(UPLOAD_DIR, path.basename(img.imgUrl))
-         try {
-            if (fs.existsSync(filepath)) fs.unlinkSync(filepath)
-         } catch (_) {}
-      }
-      await ItemImage.destroy({ where: { itemId: id } })
-
-      await item.destroy()
-
-      res.status(200).json({ success: true, message: '상품이 성공적으로 삭제되었습니다.' })
-   } catch (error) {
-      error.status = 500
-      error.message = '상품 삭제 중 오류가 발생했습니다.'
-      next(error)
-   }
-})
-
 module.exports = router

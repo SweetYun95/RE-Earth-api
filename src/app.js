@@ -17,6 +17,7 @@ const indexRouter = require('./routes')
 const authRouter = require('./routes/auth')
 const savingRouter = require('./routes/saving')
 const donationRouter = require('./routes/donation')
+const itemRouter = require('./routes/item')
 
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
@@ -72,6 +73,7 @@ app.use('/', indexRouter) // localhost:8000/
 app.use('/auth', authRouter) // localhost:8000/auth
 app.use('/saving', savingRouter)
 app.use('/donations', donationRouter) // localhost:8000/donations
+app.use('/item', itemRouter) // localhost:8000/item
 
 // ⚠️ Socket.IO 미사용: 아래 코드는 나중에 소켓 붙일 때 주석 해제하세요.
 // const server = http.createServer(app)

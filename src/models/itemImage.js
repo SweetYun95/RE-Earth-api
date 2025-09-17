@@ -5,7 +5,7 @@ module.exports = class ItemImage extends Sequelize.Model {
    static init(sequelize) {
       return super.init(
          {
-            orImgName: {
+            oriImgName: {
                type: Sequelize.STRING(150),
                allowNull: false,
             },

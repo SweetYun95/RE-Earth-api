@@ -21,7 +21,7 @@ module.exports = class Item extends Sequelize.Model {
                type: Sequelize.ENUM('SELL', 'SOLD_OUT'),
                allowNull: false,
             },
-            stocknumber: {
+            stockNumber: {
                type: Sequelize.INTEGER,
                allowNull: false,
             },

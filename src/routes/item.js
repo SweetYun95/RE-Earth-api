@@ -1,44 +1,50 @@
+// RE-Earth-api/src/routes/item.js
 const express = require('express')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
-const { Item, ItemImage, OrderItem, User } = require('')
-const { isAdmin, verifyToken, isLoggedIn } = require('')
+const { Item, ItemImage } = require('../models')
+const { isAdmin, verifyToken } = require('./middlewares')
 
 const router = express.Router()
 
-// uploads 폴더가 없을 경우 새로 생성
-try {
-   fs.readdirSync('uploads')
-} catch (error) {
+// Uploads 디렉터리 보장
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
+if (!fs.existsSync(UPLOAD_DIR)) {
+   fs.mkdirSync(UPLOAD_DIR, { recursive: true })
    console.log('uploads 폴더가 없어 uploads 폴더를 생성합니다.')
-   fs.mkdirSync('uploads')
 }
 
-// multer 설정
+// Multer 설정 (이미지 전용)
+const storage = multer.diskStorage({
+   destination(req, file, cb) {
+      cb(null, UPLOAD_DIR)
+   },
+   filename(req, file, cb) {
+      const decodedFileName = decodeURIComponent(file.originalname)
+      const ext = path.extname(decodedFileName)
+      const basename = path.basename(decodedFileName, ext)
+      cb(null, `${basename}-${Date.now()}${ext}`)
+   },
+})
+
+const fileFilter = (req, file, cb) => {
+   if (file.mimetype && file.mimetype.startsWith('image/')) return cb(null, true)
+   cb(new Error('이미지 파일만 업로드할 수 있습니다.'))
+}
+
 const upload = multer({
-   storage: multer.diskStorage({
-      destination(req, file, cb) {
-         cb(null, 'uploads/')
-      },
-      filename(req, file, cb) {
-         const decodedFileName = decodeURIComponent(file.originalname)
-         const ext = path.extname(decodedFileName)
-         const basename = path.basename(decodedFileName, ext)
-         cb(null, basename + Date.now() + ext)
-      },
-   }),
+   storage,
+   fileFilter,
    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 })
 
-//상품등록
+const toPublicUrl = (filename) => `/uploads/${filename}`
+
+// 상품 등록
 router.post('/', verifyToken, isAdmin, upload.array('img'), async (req, res, next) => {
    try {
-      if (!req.files) {
-         const error = new Error('파일 업로드에 실패했습니다.')
-         error.status = 400
-         return next(error)
-      }
+      const files = req.files || []
       const { itemNm, price, itemDetail, itemSellStatus, stockNumber, itemSummary, brandName, vendorName } = req.body
 
       const item = await Item.create({
@@ -51,15 +57,15 @@ router.post('/', verifyToken, isAdmin, upload.array('img'), async (req, res, nex
          brandName,
          vendorName,
       })
-      //이미지 삽입
-      const images = req.files.map((file) => ({
+
+      const images = files.map((file, idx) => ({
          oriImgName: file.originalname,
-         imgUrl: `/${file.filename}`,
-         repImgYn: 'N',
+         imgUrl: toPublicUrl(file.filename),
+         repImgYn: idx === 0 ? 'Y' : 'N',
          itemId: item.id,
       }))
-      if (images.length > 0) images[0].repImgYn = 'Y'
-      await ItemImage.bulkCreate(images)
+
+      if (images.length) await ItemImage.bulkCreate(images)
 
       res.status(201).json({
          success: true,
@@ -70,11 +76,11 @@ router.post('/', verifyToken, isAdmin, upload.array('img'), async (req, res, nex
    } catch (error) {
       error.status = error.status || 500
       error.message = error.message || '상품 등록 중 오류가 발생했습니다.'
-      return next(error)
+      next(error)
    }
 })
 
-//전체 상품 불러오기
+// 전체 상품 조회
 router.get('/', verifyToken, async (req, res, next) => {
    try {
       const items = await Item.findAll({
@@ -86,45 +92,18 @@ router.get('/', verifyToken, async (req, res, next) => {
             },
          ],
       })
-      res.status(201).json({
-         success: true,
-         message: '상품 목록 조회 성공',
-         items,
-      })
+      res.status(200).json({ success: true, message: '상품 목록 조회 성공', items })
    } catch (error) {
       error.status = 500
       error.message = '전체 상품리스트 불러오는 중 오류가 발생'
       next(error)
    }
 })
-//상품삭제
-router.delete('/:id', verifyToken, isAdmin, async (req, res, next) => {
-   try {
-      const id = req.params.id
 
-      const item = await Item.findByPK(id)
-
-      if (!item) {
-         const error = new Error('상품을 찾을 수 없습니다.')
-         error.status = 404
-         return next(error)
-      }
-      await item.destroy()
-      res.status(201).json({
-         success: true,
-         message: '상품이 성공적으로 삭제되었습니다.',
-      })
-   } catch (error) {
-      error.status = 500
-      error.message = '상품 삭제 중 오류가 발생했습니다.'
-      next(error)
-   }
-})
-//특정 상품 불러오기
+// 특정 상품 조회
 router.get('/:id', verifyToken, async (req, res, next) => {
    try {
-      const id = req.params.id
-
+      const { id } = req.params
       const item = await Item.findOne({
          where: { id },
          include: [
@@ -140,25 +119,22 @@ router.get('/:id', verifyToken, async (req, res, next) => {
          error.status = 404
          return next(error)
       }
-      res.status(200).json({
-         success: true,
-         message: '상품 조회 성공',
-         item,
-      })
+
+      res.status(200).json({ success: true, message: '상품 조회 성공', item })
    } catch (error) {
       error.status = 500
       error.message = '상품을 불러오는 중 오류가 발생했습니다.'
       next(error)
    }
 })
-//상품 수정하기
+
+// 상품 수정
 router.put('/:id', verifyToken, isAdmin, upload.array('img'), async (req, res, next) => {
    try {
-      const id = req.params.id
+      const { id } = req.params
       const { itemNm, price, itemDetail, itemSellStatus, stockNumber, itemSummary, brandName, vendorName } = req.body
 
-      const item = await Item.findByPK(id)
-
+      const item = await Item.findByPk(id)
       if (!item) {
          const error = new Error('해당상품을 찾을 수 없습니다.')
          error.status = 404
@@ -176,26 +152,63 @@ router.put('/:id', verifyToken, isAdmin, upload.array('img'), async (req, res, n
          vendorName,
       })
 
-      if (req.files && req.files > 0) {
+      const files = req.files || []
+      if (files.length > 0) {
+         const oldImages = await ItemImage.findAll({ where: { itemId: id } })
+         for (const img of oldImages) {
+            const filepath = path.join(UPLOAD_DIR, path.basename(img.imgUrl))
+            try {
+               if (fs.existsSync(filepath)) fs.unlinkSync(filepath)
+            } catch (_) {}
+         }
          await ItemImage.destroy({ where: { itemId: id } })
-         const images = req.file.map((file) => ({
+
+         const newImages = files.map((file, idx) => ({
             oriImgName: file.originalname,
-            imgUrl: `/${file.filename}`,
-            repImgYn: 'N',
+            imgUrl: toPublicUrl(file.filename),
+            repImgYn: idx === 0 ? 'Y' : 'N',
             itemId: item.id,
          }))
-
-         if (images.length > 0) images[0].repImgYn = 'Y'
-
-         await Img.bulkCreate(images)
+         await ItemImage.bulkCreate(newImages)
       }
-      res.status(201).json({
-         success: true,
-         message: '상품이 성공적으로 수정되었습니다.',
-      })
+
+      res.status(200).json({ success: true, message: '상품이 성공적으로 수정되었습니다.' })
    } catch (error) {
       error.status = 500
       error.message = '상품 수정 중 오류가 발생했습니다.'
       next(error)
    }
 })
+
+// 상품 삭제
+router.delete('/:id', verifyToken, isAdmin, async (req, res, next) => {
+   try {
+      const { id } = req.params
+
+      const item = await Item.findByPk(id)
+      if (!item) {
+         const error = new Error('상품을 찾을 수 없습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      const images = await ItemImage.findAll({ where: { itemId: id } })
+      for (const img of images) {
+         const filepath = path.join(UPLOAD_DIR, path.basename(img.imgUrl))
+         try {
+            if (fs.existsSync(filepath)) fs.unlinkSync(filepath)
+         } catch (_) {}
+      }
+      await ItemImage.destroy({ where: { itemId: id } })
+
+      await item.destroy()
+
+      res.status(200).json({ success: true, message: '상품이 성공적으로 삭제되었습니다.' })
+   } catch (error) {
+      error.status = 500
+      error.message = '상품 삭제 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
+module.exports = router

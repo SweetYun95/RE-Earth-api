@@ -1,7 +1,7 @@
 // RE-Earth-api/src/auth/passport/googleStrategy.js
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
-const User3 = require('../../models/user')
+const User2 = require('../../models/user')
 
 module.exports = () => {
    passport.use(
@@ -14,23 +14,21 @@ module.exports = () => {
          async (accessToken, refreshToken, profile, done) => {
             try {
                const email = ((profile.emails && profile.emails[0] && profile.emails[0].value) || '').toLowerCase()
-               if (!email) {
-                  return done(null, false, { message: '구글 계정에서 이메일 정보를 가져오지 못했습니다.' })
-               }
+               if (!email) return done(null, false, { message: '구글 계정에서 이메일 정보를 가져오지 못했습니다.' })
 
-               // 같은 이메일이 이미 있으면 그대로 로그인 (로컬/구글 상관없이 허용)
-               const exUser = await User3.findOne({ where: { email } })
+               // 같은 이메일이 있으면 그대로 로그인
+               const exUser = await User2.findOne({ where: { email } })
                if (exUser) return done(null, exUser)
 
-               // 새로 가입 처리 (모델 스키마에 맞춰 필요한 필드 채움)
-               const newUser = await User3.create({
+               // 신규 가입
+               const newUser = await User2.create({
                   userId: `google_${profile.id}`,
                   name: profile.displayName || 'Google User',
                   email,
-                  password: null, // 소셜 로그인
-                  provider: 'google',
+                  password: null,
+                  provider: 'GOOGLE', // ✅ 대문자
                   role: 'USER',
-                  address: '', // model이 NOT NULL이면 빈 문자열 등 안전값
+                  address: '', // NOT NULL 안전값
                })
                return done(null, newUser)
             } catch (error) {

@@ -10,7 +10,7 @@ const router = express.Router()
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,}$/
 const isValidPassword = (pw) => PASSWORD_REGEX.test(pw || '')
 
-// userId 4~20, 영문/숫자만
+// userId 4~20, 영문/숫자만 (프론트와 동일 규칙 유지)
 const USERID_REGEX = /^[A-Za-z0-9]{4,20}$/
 // 닉네임 2~20, 공백 금지
 const NICK_REGEX = /^\S{2,20}$/
@@ -20,19 +20,24 @@ const onlyDigits = (s) => String(s || '').replace(/\D/g, '')
 const formatKrMobile = (raw) => {
    const d = onlyDigits(raw)
    if (!/^01[016789]\d{7,8}$/.test(d)) return null // 10~11자리 휴대폰만 허용
-   // 11자리: 3-4-4 / 10자리: 3-3-4
    if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`
    return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`
 }
 
-// ───────── 회원가입 (local) ─────────
+// ───────── 회원가입 (local) — ★ userId 보존 패치 (모델 무수정) ─────────
 router.post('/join', async (req, res, next) => {
    try {
-      let { email, name, address, password, phoneNumber, phone1, phone2, phone3 } = req.body
+      let { email, name, address, password, userId, phoneNumber, phone1, phone2, phone3 } = req.body
+
+      // 과거 마크업 호환: name="id"로 온 경우 지원
+      if (!userId && typeof req.body.id === 'string') {
+         userId = req.body.id
+      }
 
       email = (email || '').trim().toLowerCase()
       name = (name || '').trim()
       address = (address || '').trim()
+      userId = (userId || '').trim()
 
       if (!email || !name || !address || !password) {
          const err = new Error('필수 항목이 누락되었습니다. (email, name, address, password)')
@@ -53,7 +58,22 @@ router.post('/join', async (req, res, next) => {
          return next(error)
       }
 
-      // 휴대폰 조립/정규화 (phoneNumber 단일값 또는 phone1-3 조합 둘 다 지원)
+      // ✅ 입력된 userId가 있으면 그대로 보존 (모델 훅 미수정)
+      if (userId) {
+         if (!USERID_REGEX.test(userId)) {
+            const err = new Error('userId 형식이 올바르지 않습니다. (4~20자 영문/숫자)')
+            err.status = 400
+            return next(err)
+         }
+         const dupeId = await User.findOne({ where: { userId } })
+         if (dupeId) {
+            const err = new Error('이미 사용 중인 userId 입니다.')
+            err.status = 409
+            return next(err)
+         }
+      }
+
+      // 휴대폰 조립/정규화 (phoneNumber 단일값 또는 phone1-3)
       const rawPhone = phoneNumber || [phone1, phone2, phone3].filter((v) => (v ?? '') !== '').join('-') || ''
       const normalizedPhone = rawPhone ? formatKrMobile(rawPhone) : null
       if (rawPhone && !normalizedPhone) {
@@ -70,14 +90,15 @@ router.post('/join', async (req, res, next) => {
          password: hash,
          role: 'USER',
          address,
-         provider: 'LOCAL', // 모델에서 대문자 ENUM
+         provider: 'LOCAL',
          phoneNumber: normalizedPhone,
+         ...(userId ? { userId } : {}), // ← 중요: 입력된 userId 있으면 그대로 저장
       })
 
       return res.status(201).json({
          success: true,
          message: '사용자가 성공적으로 등록되었습니다.',
-         user: { id: newUser.id, name: newUser.name, role: newUser.role },
+         user: { id: newUser.id, userId: newUser.userId, name: newUser.name, role: newUser.role },
       })
    } catch (error) {
       error.status = error.status || 500
@@ -119,7 +140,6 @@ const parseScopes = (s = '') =>
 const GOOGLE_SCOPES = parseScopes(process.env.GOOGLE_SCOPE || 'profile,email')
 const KAKAO_SCOPES = parseScopes(process.env.KAKAO_SCOPE || 'profile_nickname,account_email')
 
-// 구글
 router.get('/google', passport.authenticate('google', { scope: GOOGLE_SCOPES }))
 router.get('/google/callback', (req, res, next) => {
    passport.authenticate('google', (err, user, info) => {
@@ -144,7 +164,6 @@ router.get('/google/callback', (req, res, next) => {
    })(req, res, next)
 })
 
-// 카카오
 router.get('/kakao', passport.authenticate('kakao', { scope: KAKAO_SCOPES }))
 router.get('/kakao/callback', (req, res, next) => {
    passport.authenticate('kakao', (err, user, info) => {
@@ -169,7 +188,7 @@ router.get('/kakao/callback', (req, res, next) => {
    })(req, res, next)
 })
 
-// ───────── 중복확인 API (★ 404 해결 포인트) ─────────
+// ───────── 중복확인 API ─────────
 router.post('/check-username', async (req, res, next) => {
    try {
       const userId = String(req.body.userId || '').trim()

@@ -16,13 +16,14 @@ const cors = require('cors') // CORS 미들웨어 -> ★api 서버는 반드시 
 const indexRouter = require('./routes')
 const authRouter = require('./routes/auth')
 const savingRouter = require('./routes/saving')
+const donationRouter = require('./routes/donation')
 
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
 
 const app = express()
 passportConfig()
-app.set('port', process.env.PORT || 8002)
+app.set('port', process.env.PORT || 8000)
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
@@ -38,7 +39,7 @@ sequelize
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs (Swagger 준비되면 해제)
 app.use(
    cors({
-      origin: process.env.FRONTEND_APP_URL, // 특정 주소만 request 허용
+      origin: process.env.FRONTEND_APP_URL || 'http://localhost:5173',
       credentials: true, // 쿠키, 세션 등 인증 정보 허용
    })
 )
@@ -51,11 +52,13 @@ app.use(cookieParser(process.env.COOKIE_SECRET)) // 쿠키 설정
 // 세션 설정
 const sessionMiddleware = session({
    resave: false,
-   saveUninitialized: true,
+   saveUninitialized: false,
    secret: process.env.COOKIE_SECRET,
    cookie: {
       httpOnly: true,
       secure: false, // HTTPS 사용 시 true 권장 (프록시 환경에서는 trust proxy 설정 필요)
+      sameSite: 'lax', // 크로스 포트(5173↔8002) 로컬 개발에서 무난
+      maxAge: 1000 * 60 * 60 * 24, // ★ 1일
    },
 })
 app.use(sessionMiddleware)
@@ -68,6 +71,7 @@ app.use(passport.session())
 app.use('/', indexRouter) // localhost:8000/
 app.use('/auth', authRouter) // localhost:8000/auth
 app.use('/saving', savingRouter)
+app.use('/donations', donationRouter) // localhost:8000/donations
 
 // ⚠️ Socket.IO 미사용: 아래 코드는 나중에 소켓 붙일 때 주석 해제하세요.
 // const server = http.createServer(app)

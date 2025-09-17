@@ -2,7 +2,9 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
-const User = require('../models/user')
+const jwt = require('jsonwebtoken')
+const { User } = require('../models')
+const { isLoggedIn, isNotLoggedIn } = require('./middlewares')
 
 const router = express.Router()
 
@@ -24,8 +26,10 @@ const formatKrMobile = (raw) => {
    return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`
 }
 
-// ───────── 회원가입 (local) — ★ userId 보존 패치 (모델 무수정) ─────────
-router.post('/join', async (req, res, next) => {
+const signJwt = (user) => jwt.sign({ id: user.id, userId: user.userId, role: user.role, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1h', issuer: 're-earth' })
+
+// ───────── 회원가입 (local) ─────────
+router.post('/join', isNotLoggedIn, async (req, res, next) => {
    try {
       let { email, name, address, password, userId, phoneNumber, phone1, phone2, phone3 } = req.body
 
@@ -50,7 +54,6 @@ router.post('/join', async (req, res, next) => {
          return next(err)
       }
 
-      // 이메일 중복 검사
       const exUser = await User.findOne({ where: { email } })
       if (exUser) {
          const error = new Error('이미 존재하는 사용자입니다.')
@@ -58,7 +61,6 @@ router.post('/join', async (req, res, next) => {
          return next(error)
       }
 
-      // ✅ 입력된 userId가 있으면 그대로 보존 (모델 훅 미수정)
       if (userId) {
          if (!USERID_REGEX.test(userId)) {
             const err = new Error('userId 형식이 올바르지 않습니다. (4~20자 영문/숫자)')
@@ -73,7 +75,6 @@ router.post('/join', async (req, res, next) => {
          }
       }
 
-      // 휴대폰 조립/정규화 (phoneNumber 단일값 또는 phone1-3)
       const rawPhone = phoneNumber || [phone1, phone2, phone3].filter((v) => (v ?? '') !== '').join('-') || ''
       const normalizedPhone = rawPhone ? formatKrMobile(rawPhone) : null
       if (rawPhone && !normalizedPhone) {
@@ -92,7 +93,7 @@ router.post('/join', async (req, res, next) => {
          address,
          provider: 'LOCAL',
          phoneNumber: normalizedPhone,
-         ...(userId ? { userId } : {}), // ← 중요: 입력된 userId 있으면 그대로 저장
+         ...(userId ? { userId } : {}),
       })
 
       return res.status(201).json({
@@ -108,7 +109,7 @@ router.post('/join', async (req, res, next) => {
 })
 
 // ───────── 로그인 (local) ─────────
-router.post('/login', async (req, res, next) => {
+router.post('/login', isNotLoggedIn, (req, res, next) => {
    passport.authenticate('local', (authError, user, info) => {
       if (authError) {
          authError.status = 500
@@ -126,9 +127,21 @@ router.post('/login', async (req, res, next) => {
             loginError.message = '로그인 중 오류 발생'
             return next(loginError)
          }
-         return res.json({ success: true, message: '로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
+         const token = signJwt(user)
+         return res.json({
+            success: true,
+            message: '로그인 성공',
+            token, // Authorization 헤더에 그대로 담아 보내세요 (Bearer 접두사 없이)
+            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+         })
       })
    })(req, res, next)
+})
+
+// ───────── 세션 로그인 상태에서 JWT 재발급 ─────────
+router.post('/token', isLoggedIn, (req, res) => {
+   const token = signJwt(req.user)
+   return res.json({ token })
 })
 
 // ───────── 소셜 로그인 (구글/카카오) ─────────
@@ -159,7 +172,8 @@ router.get('/google/callback', (req, res, next) => {
             loginError.message = '구글 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         return res.json({ success: true, message: '구글 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
+         const token = signJwt(user)
+         return res.json({ success: true, message: '구글 로그인 성공', token, user: { id: user.id, userId: user.userId, name: user.name, role: user.role } })
       })
    })(req, res, next)
 })
@@ -183,7 +197,8 @@ router.get('/kakao/callback', (req, res, next) => {
             loginError.message = '카카오 로그인 세션 처리 중 오류 발생'
             return next(loginError)
          }
-         return res.json({ success: true, message: '카카오 로그인 성공', user: { id: user.id, name: user.name, role: user.role } })
+         const token = signJwt(user)
+         return res.json({ success: true, message: '카카오 로그인 성공', token, user: { id: user.id, userId: user.userId, name: user.name, role: user.role } })
       })
    })(req, res, next)
 })
@@ -244,7 +259,7 @@ router.post('/check-email', async (req, res, next) => {
 })
 
 // ───────── 로그아웃/상태 ─────────
-router.get('/logout', async (req, res, next) => {
+router.get('/logout', isLoggedIn, (req, res, next) => {
    req.logout((logoutError) => {
       if (logoutError) {
          logoutError.status = 500
@@ -258,7 +273,10 @@ router.get('/logout', async (req, res, next) => {
 router.get('/status', async (req, res, next) => {
    try {
       if (req.isAuthenticated?.() && req.user) {
-         return res.status(200).json({ isAuthenticated: true, user: { id: req.user.id, name: req.user.name, role: req.user.role } })
+         return res.status(200).json({
+            isAuthenticated: true,
+            user: { id: req.user.id, userId: req.user.userId, name: req.user.name, role: req.user.role },
+         })
       }
       return res.status(200).json({ isAuthenticated: false })
    } catch (error) {
@@ -266,6 +284,15 @@ router.get('/status', async (req, res, next) => {
       error.message = '로그인 상태확인 중 오류가 발생했습니다.'
       return next(error)
    }
+})
+
+// ✅ 로그인된 유저 정보를 반환 (새로고침 시 프론트 리덕스 초기화 → 여기로 복구)
+router.get('/me', (req, res) => {
+   if (req.isAuthenticated && req.isAuthenticated()) {
+      const { id, userId, name, email, role } = req.user
+      return res.json({ user: { id, userId, name, email, role } })
+   }
+   return res.status(401).json({ user: null })
 })
 
 module.exports = router

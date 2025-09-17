@@ -2,9 +2,8 @@ const express = require('express')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
-const { Item, ItemImage, OrderItem, User } = require('')
-const { isAdmin, verifyToken, isLoggedIn } = require('')
-
+const { Item, ItemImage } = require('../models')
+const { isAdmin, verifyToken } = require('./middlewares')
 const router = express.Router()
 
 // uploads 폴더가 없을 경우 새로 생성
@@ -205,3 +204,4 @@ router.put('/:id', verifyToken, isAdmin, upload.array('img'), async (req, res, n
       next(error)
    }
 })
+module.exports = router

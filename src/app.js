@@ -15,6 +15,7 @@ const cors = require('cors') // CORS 미들웨어 -> ★api 서버는 반드시 
 // 라우터 및 기타 모듈 불러오기
 const indexRouter = require('./routes')
 const authRouter = require('./routes/auth')
+const itemRouter = require('./routes/item')
 
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
@@ -66,6 +67,7 @@ app.use(passport.session())
 // 라우터 등록
 app.use('/', indexRouter) // localhost:8000/
 app.use('/auth', authRouter) // localhost:8000/auth
+app.use('/item', itemRouter) // localhost:8000/item
 
 // ⚠️ Socket.IO 미사용: 아래 코드는 나중에 소켓 붙일 때 주석 해제하세요.
 // const server = http.createServer(app)

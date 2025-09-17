@@ -77,7 +77,13 @@ router.post('/', verifyToken, isAdmin, upload.array('img'), async (req, res, nex
 //전체 상품 불러오기
 router.get('/', verifyToken, async (req, res, next) => {
    try {
+      const sellCategory = req.query.sellCategory
+      const where = {}
+      if (sellCategory) {
+         where.itemSellStatus = sellCategory
+      }
       const items = await Item.findAll({
+         where,
          order: [['createdAt', 'DESC']],
          include: [
             {

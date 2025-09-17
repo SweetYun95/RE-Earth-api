@@ -207,6 +207,7 @@ router.get('/kakao/callback', (req, res, next) => {
 router.post('/check-username', async (req, res, next) => {
    try {
       const userId = String(req.body.userId || '').trim()
+
       if (!userId || !USERID_REGEX.test(userId)) {
          const err = new Error('userId 형식이 올바르지 않습니다. (4~20자 영문/숫자)')
          err.status = 400

@@ -2,28 +2,48 @@
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const bcrypt = require('bcrypt')
-const User2 = require('../../models/user')
+const User = require('../../models/user')
 
 module.exports = () => {
    passport.use(
       new LocalStrategy(
          {
-            // 가입/로그인 폼에서 email, password를 받는 기준으로 통일
-            usernameField: 'email',
+            // 기본 필드는 idOrEmail을 기대하되,
+            // 실제 콜백에서 req.body.userId도 함께 수용한다.
+            usernameField: 'idOrEmail',
             passwordField: 'password',
-            passReqToCallback: false,
+            passReqToCallback: true,
+            session: true,
          },
-         async (email, password, done) => {
+         /**
+          * @param {import('express').Request} req
+          * @param {string} idOrEmail - usernameField(idOrEmail)에 매핑된 값
+          * @param {string} password
+          * @param {(err: any, user?: any, info?: any) => void} done
+          */
+         async (req, idOrEmail, password, done) => {
             try {
-               email = (email || '').toLowerCase().trim()
-               const user = await User2.findOne({ where: { email, provider: 'local' } })
+               // 🔸 보강 포인트: userId를 대체 입력으로 허용 (과거 프론트 호환)
+               const fallbackUserId = req?.body?.userId
+               const raw = String(idOrEmail || fallbackUserId || '').trim()
 
+               if (!raw || !password) {
+                  return done(null, false, { message: 'Missing credentials' })
+               }
+
+               // 이메일인지 아이디인지 판별
+               const isEmail = raw.includes('@')
+               const where = isEmail
+                  ? { email: raw.toLowerCase(), provider: 'LOCAL' } // ENUM: 'LOCAL'
+                  : { userId: raw, provider: 'LOCAL' }
+
+               const user = await User.findOne({ where })
                if (!user) {
-                  return done(null, false, { message: '가입되지 않은 이메일이거나 소셜 계정입니다.' })
+                  return done(null, false, { message: '가입되지 않은 계정이거나 소셜 계정입니다.' })
                }
 
                if (!user.password) {
-                  // 소셜 계정이 로컬로 로그인 시도하는 경우 방어
+                  // 소셜 가입 계정 (password null)
                   return done(null, false, { message: '이 계정은 소셜 로그인으로 가입되었습니다.' })
                }
 
@@ -34,9 +54,6 @@ module.exports = () => {
 
                return done(null, user)
             } catch (error) {
-               if (error.name === 'SequelizeConnectionError') {
-                  return done(null, false, { message: '데이터베이스 연결 오류' })
-               }
                return done(error)
             }
          }

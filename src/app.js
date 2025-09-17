@@ -22,7 +22,7 @@ const passportConfig = require('./auth/passport')
 
 const app = express()
 passportConfig()
-app.set('port', process.env.PORT || 8002)
+app.set('port', process.env.PORT || 8000)
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
@@ -57,6 +57,7 @@ const sessionMiddleware = session({
       httpOnly: true,
       secure: false, // HTTPS 사용 시 true 권장 (프록시 환경에서는 trust proxy 설정 필요)
       sameSite: 'lax', // 크로스 포트(5173↔8002) 로컬 개발에서 무난
+      maxAge: 1000 * 60 * 60 * 24, // ★ 1일
    },
 })
 app.use(sessionMiddleware)

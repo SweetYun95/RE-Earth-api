@@ -15,6 +15,7 @@ const cors = require('cors') // CORS 미들웨어 -> ★api 서버는 반드시 
 // 라우터 및 기타 모듈 불러오기
 const indexRouter = require('./routes')
 const authRouter = require('./routes/auth')
+const savingRouter = require('./routes/saving')
 const donationRouter = require('./routes/donation')
 const itemRouter = require('./routes/item')
 
@@ -70,6 +71,7 @@ app.use(passport.session())
 // 라우터 등록
 app.use('/', indexRouter) // localhost:8000/
 app.use('/auth', authRouter) // localhost:8000/auth
+app.use('/saving', savingRouter)
 app.use('/donations', donationRouter) // localhost:8000/donations
 app.use('/item', itemRouter) // localhost:8000/item
 

@@ -138,6 +138,44 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
    })(req, res, next)
 })
 
+// ───────── 관리자 로그인 (local / 세션 생성 전 role 검증) ─────────
+router.post('/login-admin', isNotLoggedIn, (req, res, next) => {
+   passport.authenticate('local', (authError, user, info) => {
+      if (authError) {
+         authError.status = 500
+         authError.message = '인증 중 오류 발생'
+         return next(authError)
+      }
+      if (!user) {
+         const error = new Error(info?.message || '로그인 실패')
+         error.status = 401
+         return next(error)
+      }
+
+      // ★ 세션 만들기 전에 ADMIN 검증
+      if (user.role !== 'ADMIN') {
+         const error = new Error('관리자 권한이 없습니다.')
+         error.status = 403
+         return next(error) // req.login 호출 안 함 → 세션/토큰 생성 안 됨
+      }
+
+      req.login(user, (loginError) => {
+         if (loginError) {
+            loginError.status = 500
+            loginError.message = '로그인 중 오류 발생'
+            return next(loginError)
+         }
+         const token = signJwt(user)
+         return res.json({
+            success: true,
+            message: '관리자 로그인 성공',
+            token,
+            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+         })
+      })
+   })(req, res, next)
+})
+
 // ───────── 세션 로그인 상태에서 JWT 재발급 ─────────
 router.post('/token', isLoggedIn, (req, res) => {
    const token = signJwt(req.user)

@@ -17,10 +17,6 @@ module.exports = class EcoActionLog extends Sequelize.Model {
                type: Sequelize.STRING(100),
                allowNull: false,
             }, // 검증상태(관리자)
-            carbonSave: {
-               type: Sequelize.INTEGER,
-               allowNull: false,
-            }, // 산출된 탄소절감량
             ecoActionId: {
                type: Sequelize.INTEGER,
                allowNull: false,

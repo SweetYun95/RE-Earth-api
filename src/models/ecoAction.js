@@ -18,7 +18,7 @@ module.exports = class EcoAction extends Sequelize.Model {
                allowNull: false,
             }, // 측정기준단위
             carbonUnit: {
-               type: Sequelize.INTEGER,
+               type: Sequelize.DECIMAL(5, 2),
                allowNull: false,
             }, // 단위당 탄소절감량
             pointUnit: {

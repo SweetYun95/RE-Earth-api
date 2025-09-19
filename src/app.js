@@ -19,6 +19,10 @@ const savingRouter = require('./routes/saving')
 const donationRouter = require('./routes/donation')
 const itemRouter = require('./routes/item')
 
+// ✅ 관리자 회원관리 라우터 (프리픽스: /api/admin)
+const adminUserRouter = require('./routes/admin/user')
+
+
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
 
@@ -40,8 +44,8 @@ sequelize
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs (Swagger 준비되면 해제)
 app.use(
    cors({
-      origin: process.env.FRONTEND_APP_URL || 'http://localhost:5173',
-      credentials: true, // 쿠키, 세션 등 인증 정보 허용
+      origin: process.env.FRONTEND_APP_URL || process.env.CLIENT_URL || 'http://localhost:5173',
+      credentials: true,
    })
 )
 app.use(morgan('dev')) // HTTP 요청 로깅 (dev 모드)
@@ -74,6 +78,7 @@ app.use('/auth', authRouter) // localhost:8000/auth
 app.use('/saving', savingRouter)
 app.use('/donations', donationRouter) // localhost:8000/donations
 app.use('/item', itemRouter) // localhost:8000/item
+app.use('/api/admin', adminUserRouter) // ✅ 관리자 회원관리 라우터 (프리픽스: /api/admin)
 
 // ⚠️ Socket.IO 미사용: 아래 코드는 나중에 소켓 붙일 때 주석 해제하세요.
 // const server = http.createServer(app)

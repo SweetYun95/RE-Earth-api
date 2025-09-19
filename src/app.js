@@ -18,10 +18,10 @@ const authRouter = require('./routes/auth')
 const savingRouter = require('./routes/saving')
 const donationRouter = require('./routes/donation')
 const itemRouter = require('./routes/item')
+const pointOrderRouter = require('./routes/pointorder')
 
 // ✅ 관리자 회원관리 라우터 (프리픽스: /api/admin)
 const adminUserRouter = require('./routes/admin/user')
-
 
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
@@ -79,6 +79,7 @@ app.use('/auth', authRouter) // localhost:8000/auth
 app.use('/saving', savingRouter)
 app.use('/donations', donationRouter) // localhost:8000/donations
 app.use('/item', itemRouter) // localhost:8000/item
+app.use('/pointOrder', pointOrderRouter)
 app.use('/api/admin', adminUserRouter) // ✅ 관리자 회원관리 라우터 (프리픽스: /api/admin)
 
 // ⚠️ Socket.IO 미사용: 아래 코드는 나중에 소켓 붙일 때 주석 해제하세요.

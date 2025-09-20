@@ -7,7 +7,6 @@ const { sequelize, User, Point, PointOrder, OrderItem, Item, ItemImage } = requi
 const { verifyToken, isLoggedIn } = require('./middlewares')
 
 // [POST] 주문 생성
-// req.body = { items: [{ itemId:number, count:number }, ...] }
 router.post('/', verifyToken, isLoggedIn, async (req, res, next) => {
    let transaction
    try {
@@ -20,22 +19,21 @@ router.post('/', verifyToken, isLoggedIn, async (req, res, next) => {
          throw err
       }
 
-      // 1) 회원 + 포인트 잔액 조회 (잠금)
       const userId = req.decoded.id
+
+      // 1) 회원 잠금 로딩
       const user = await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE })
       if (!user) {
          const err = new Error('회원 정보를 찾을 수 없습니다.')
          err.status = 404
          throw err
       }
-      // 포인트 잔액
-      const pointBalanceRaw = await Point.sum('delta', {
-         where: { userId },
-         transaction,
-      })
-      const pointBalance = Number(pointBalanceRaw) || 0 // null → 0
 
-      // 2) 아이템 잠금 + 합계 계산 + 재고 검증
+      // 2) 잔액 계산
+      const pointBalanceRaw = await Point.sum('delta', { where: { userId }, transaction })
+      const pointBalance = Number(pointBalanceRaw) || 0
+
+      // 3) 아이템 잠금 + 합계 계산 + 재고 검증
       let orderTotal = 0
       const itemRows = []
       for (const it of items) {
@@ -57,40 +55,41 @@ router.post('/', verifyToken, isLoggedIn, async (req, res, next) => {
          itemRows.push({ row, count: it.count })
       }
 
-      // 3) 포인트 잔액 확인
+      // 4) 포인트 잔액 확인
       if (pointBalance < orderTotal) {
          const err = new Error('보유 포인트가 부족합니다.')
          err.status = 400
          throw err
       }
 
-      // 4) 포인트 차감 로그 생성 (여기서 생성된 id가 pointOrders.pointId로 들어가야 함!)
+      // 5) 포인트 차감 레저 생성 (여기서 pointLog를 만듭니다)
       const pointLog = await Point.create(
          {
             userId,
             delta: -orderTotal,
-            reason: 'SPEND_ORDER', // enum/문자열은 프로젝트 컨벤션에 맞추세요
-            meta: { items },
+            reason: 'ORDER_PAYMENT',
+            memo: `주문 결제`,
          },
          { transaction }
       )
 
-      // 5) 주문 생성 (pointId 필수)
+      // 6) 주문 생성 (PointOrder에는 정말 필요한 필드만)
       const order = await PointOrder.create(
          {
             userId,
             totalPrice: orderTotal,
-            pointId: pointLog.id, // ★ 여기!
-            status: 'PAID', // 컨벤션에 맞게
+            pointId: pointLog.id, // FK로 연결하려면 PointOrder에 pointId 컬럼이 있어야 함
+            orderStatus: 'PAID', // 컬럼명이 orderStatus 라고 가정
          },
          { transaction }
       )
 
-      // 6) 주문 아이템 생성 + 재고 차감
+      // 7) 주문 아이템 생성 + 재고 차감
       const orderItemsBulk = itemRows.map(({ row, count }) => ({
-         orderPrice: row.price * count,
-         pointOrderId: order.id,
          itemId: row.id,
+         pointOrderId: order.id,
+         orderPrice: row.price * count,
+         count, // ← 모델/마이그레이션에 count INTEGER NOT NULL 추가되어 있어야 함
       }))
       await OrderItem.bulkCreate(orderItemsBulk, { transaction })
 
@@ -108,7 +107,7 @@ router.post('/', verifyToken, isLoggedIn, async (req, res, next) => {
       return next(err)
    }
 })
-
+   
 /**
  * [GET] 주문 목록
  * /list?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&page=1&size=10

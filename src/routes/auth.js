@@ -330,7 +330,7 @@ router.get('/me', (req, res) => {
       const { id, userId, name, email, role } = req.user
       return res.json({ user: { id, userId, name, email, role } })
    }
-   return res.status(401).json({ user: null })
+   return res.json({ user: null })
 })
 
 module.exports = router

@@ -1,6 +1,7 @@
 // RE_Earth-api/src/swagger.js
 const swaggerJSDoc = require('swagger-jsdoc')
 const swaggerUi = require('swagger-ui-express')
+const path = require('path')
 
 const options = {
    definition: {
@@ -31,7 +32,7 @@ const options = {
       ],
    },
    // Swagger 주석이 달린 라우터 파일들 (admin/ 하위 포함)
-   apis: ['./routes/**/*.swagger.js'],
+   apis: [path.join(__dirname, 'routes_swagger/**/*.swagger.js')],
 }
 
 const swaggerSpec = swaggerJSDoc(options)

@@ -6,9 +6,9 @@ const options = {
    definition: {
       openapi: '3.0.0', // OpenAPI 문서 버전
       info: {
-         title: 'Shopmax API',
+         title: 'RE_Earth API',
          version: '1.0.0',
-         description: 'Shopmax API 문서입니다.',
+         description: 'RE_Earth API 문서입니다.',
       },
       servers: [
          {

@@ -50,7 +50,7 @@ JWT 인증, 기부/거래 처리, Swagger 문서화, 실시간 알림 기능 등
 ```
 🔗 [ERD 설계 링크](https://www.erdcloud.com/d/f3jnTmAkShKLQgXhi)
 
-📁 레포 구조
+## 📁 RE-Rarth-api(Backend)
 ```bash
 RE-Earth-api/
 ├─ node_modules/              # 프로젝트에서 사용하는 모든 외부 라이브러리들이 설치되는 디렉토리

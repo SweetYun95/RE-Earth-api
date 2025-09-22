@@ -7,7 +7,7 @@ const { isLoggedIn, isAdmin } = require('../middlewares')
 router.use(isLoggedIn, isAdmin)
 
 // 하위 라우터 연결
-router.use('/users', require('./user'))
+router.use('/', require('./user'))
 router.use('/donations', require('./donation'))
 // router.use('/items', require('./item'))
 router.use('/qna', require('./qna'))

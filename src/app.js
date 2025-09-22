@@ -7,7 +7,7 @@ const session = require('express-session') // 세션 관리 미들웨어
 const passport = require('passport') // 인증 미들웨어
 require('dotenv').config() // 환경 변수 관리
 const cors = require('cors') // CORS 미들웨어 -> ★api 서버는 반드시 설정해줘야 한다
-// const { swaggerUi, swaggerSpec } = require('./swagger') // ⚠️ Swagger 모듈 미구현이므로 임시 비활성화
+const { swaggerUi, swaggerSpec } = require('./swagger')
 // ⚠️ 아직 Socket.IO 기능이 없으므로 관련 코드는 주석 처리합니다.
 // const http = require('http') // http 모듈
 // const socketIO = require('./socket') // Socket.IO 초기화 함수
@@ -18,11 +18,11 @@ const authRouter = require('./routes/auth')
 const savingRouter = require('./routes/saving')
 const donationRouter = require('./routes/donation')
 const itemRouter = require('./routes/item')
+const pointOrderRouter = require('./routes/pointorder')
 
 // ✅ 관리자 라우터 (프리픽스: /api/admin)
 const adminUserRouter = require('./routes/admin/user')
 const adminDonationRouter = require('./routes/admin/donation')
-
 
 const { sequelize } = require('./models')
 const passportConfig = require('./auth/passport')
@@ -33,7 +33,7 @@ app.set('port', process.env.PORT || 8000)
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
-   .sync({ force: false })
+   .sync({ force: false, alter: false }) // 배포 시 데이터 보존
    .then(() => {
       console.log('데이터베이스 연결 성공')
    })
@@ -42,7 +42,7 @@ sequelize
    })
 
 // 미들웨어 설정
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs (Swagger 준비되면 해제)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec)) // http://localhost:8000/api-docs
 app.use(
    cors({
       origin: process.env.FRONTEND_APP_URL || process.env.CLIENT_URL || 'http://localhost:5173',
@@ -50,7 +50,8 @@ app.use(
    })
 )
 app.use(morgan('dev')) // HTTP 요청 로깅 (dev 모드)
-app.use(express.static(path.join(__dirname, 'uploads'))) // 정적 파일 제공
+// app.use(express.static(path.join(__dirname, 'uploads'))) // 정적 파일 제공
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 app.use(express.json()) // JSON 데이터 파싱
 app.use(express.urlencoded({ extended: false })) // URL-encoded 데이터 파싱
 app.use(cookieParser(process.env.COOKIE_SECRET)) // 쿠키 설정
@@ -81,6 +82,7 @@ app.use('/donations', donationRouter) // localhost:8000/donations
 app.use('/item', itemRouter) // localhost:8000/item
 
 // ✅ 관리자 라우터 (프리픽스: /api/admin)
+app.use('/pointOrder', pointOrderRouter)
 app.use('/api/admin', adminUserRouter) // ✅ 관리자 회원관리 라우터 (프리픽스: /api/admin)
 app.use('/api/admin/donations', adminDonationRouter) // ✅ 관리자 기부관리 라우터 (프리픽스: /api/admin)
 

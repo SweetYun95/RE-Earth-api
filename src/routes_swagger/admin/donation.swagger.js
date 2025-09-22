@@ -1,4 +1,4 @@
-// RE-Earth-api/src/routes/admin/donation.js
+// RE-Earth-api/src/routes_swagger/admin/donation.swagger.js
 const express = require('express')
 const router = express.Router()
 const { Op, fn, col, literal } = require('sequelize')
@@ -15,8 +15,26 @@ const ALLOWED = {
 }
 const canTransition = (prev, next) => (ALLOWED[prev] || []).includes(next)
 
-// ────────────────────────────────────────────────
-// [통계] GET /api/admin/donations/stats
+/**
+ * @swagger
+ * tags:
+ *   name: AdminDonations
+ *   description: 관리자 기부 관리 API
+ */
+
+/**
+ * @swagger
+ * /api/admin/donations/stats:
+ *   get:
+ *     summary: 기부 통계 조회
+ *     description: 이번 달 기부 건수, 포인트 합계, 최근 7일 일별 통계, 최신 기부 6건, 상태별 기부 현황을 반환합니다.
+ *     tags: [AdminDonations]
+ *     responses:
+ *       200:
+ *         description: 통계 데이터 반환 성공
+ *       500:
+ *         description: 서버 오류
+ */
 router.get('/stats', isAdmin, async (req, res, next) => {
    try {
       const now = new Date()
@@ -79,8 +97,38 @@ router.get('/stats', isAdmin, async (req, res, next) => {
    }
 })
 
-// ────────────────────────────────────────────────
-// [목록] GET /api/admin/donations?status=&q=&page=&size=
+/**
+ * @swagger
+ * /api/admin/donations:
+ *   get:
+ *     summary: 기부 목록 조회
+ *     description: 상태, 검색어, 페이지네이션으로 기부 신청 목록을 가져옵니다.
+ *     tags: [AdminDonations]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: 기부 상태 (REQUESTED, SCHEDULED 등)
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: 기부자 이름, 이메일, 주소 검색
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *         description: 페이지 크기
+ *     responses:
+ *       200:
+ *         description: 기부 목록 반환
+ */
 router.get('/', isAdmin, async (req, res, next) => {
    try {
       const page = Math.max(1, parseInt(req.query.page, 10) || 1)
@@ -112,8 +160,26 @@ router.get('/', isAdmin, async (req, res, next) => {
    }
 })
 
-// ────────────────────────────────────────────────
-// [상세] GET /api/admin/donations/:id
+/**
+ * @swagger
+ * /api/admin/donations/{id}:
+ *   get:
+ *     summary: 기부 상세 조회
+ *     description: 특정 기부 신청의 상세 정보를 가져옵니다.
+ *     tags: [AdminDonations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 기부 신청 ID
+ *     responses:
+ *       200:
+ *         description: 기부 상세 반환
+ *       404:
+ *         description: 기부 신청 없음
+ */
 router.get('/:id', isAdmin, async (req, res, next) => {
    try {
       const id = Number(req.params.id)
@@ -132,9 +198,44 @@ router.get('/:id', isAdmin, async (req, res, next) => {
    }
 })
 
-// ────────────────────────────────────────────────
-// [수정] PUT /api/admin/donations/:id
-// body: { status?, receiptUrl?, memo? }
+/**
+ * @swagger
+ * /api/admin/donations/{id}:
+ *   put:
+ *     summary: 기부 신청 수정
+ *     description: 기부 상태, 영수증 URL, 메모 등을 수정합니다.
+ *     tags: [AdminDonations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 기부 신청 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 description: 기부 상태 (REQUESTED, SCHEDULED, PICKED, CANCELLED)
+ *               receiptUrl:
+ *                 type: string
+ *                 description: 영수증 URL
+ *               memo:
+ *                 type: string
+ *                 description: 메모
+ *     responses:
+ *       200:
+ *         description: 기부 신청 수정 성공
+ *       400:
+ *         description: 잘못된 요청 또는 상태 전이 불가
+ *       404:
+ *         description: 기부 신청 없음
+ */
 router.put('/:id', isAdmin, async (req, res, next) => {
    const t = await sequelize.transaction()
    try {

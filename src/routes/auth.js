@@ -99,7 +99,12 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
       return res.status(201).json({
          success: true,
          message: '사용자가 성공적으로 등록되었습니다.',
-         user: { id: newUser.id, userId: newUser.userId, name: newUser.name, role: newUser.role },
+         user: {
+            id: newUser.id,
+            userId: newUser.userId,
+            name: newUser.name,
+            role: newUser.role,
+         },
       })
    } catch (error) {
       error.status = error.status || 500
@@ -132,7 +137,12 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
             success: true,
             message: '로그인 성공',
             token, // Authorization 헤더에 그대로 담아 보내세요 (Bearer 접두사 없이)
-            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+            user: {
+               id: user.id,
+               userId: user.userId,
+               name: user.name,
+               role: user.role,
+            },
          })
       })
    })(req, res, next)
@@ -170,11 +180,51 @@ router.post('/login-admin', isNotLoggedIn, (req, res, next) => {
             success: true,
             message: '관리자 로그인 성공',
             token,
-            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+            user: {
+               id: user.id,
+               userId: user.userId,
+               name: user.name,
+               role: user.role,
+            },
          })
       })
    })(req, res, next)
 })
+
+// ───────── 회원 정보 수정 (유저) ─────────
+router.patch('/edit', isLoggedIn, async (req, res, next) => {
+   try {
+      const user = await User.findOne({ where: { id: req.user.id } })
+      const { address, email, name, phoneNumber, newPassword } = req.body
+      if (!user) {
+         const error = new Error('회원 정보가 존재하지 않습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      if (newPassword) {
+         // 반드시 await
+         user.password = await bcrypt.hash(newPassword, 12)
+      }
+      if (address !== undefined) user.address = address
+      if (email !== undefined) user.email = email
+      if (name !== undefined) user.name = name
+      if (phoneNumber !== undefined) user.phoneNumber = phoneNumber
+
+      await user.save()
+      return res.status(200).json({ success: true, message: '회원 정보 수정이 완료되었습니다.' })
+   } catch (e) {
+      e.status = 500
+      e.message = '회원 정보 수정 중 오류'
+      return next(e)
+   }
+})
+
+// ⚠️ 동적 라우트는 다른 경로를 잡아먹을 수 있어 주석 처리
+// // 아이디 찾기
+// router.post('/:email', async (req, res, next) => { ... })
+// // 임시 비밀번호 발급
+// router.get('/:userId', async (req, res, next) => { ... })
 
 // ───────── 세션 로그인 상태에서 JWT 재발급 ─────────
 router.post('/token', isLoggedIn, (req, res) => {
@@ -211,7 +261,12 @@ router.get('/google/callback', (req, res, next) => {
             return next(loginError)
          }
          const token = signJwt(user)
-         return res.json({ success: true, message: '구글 로그인 성공', token, user: { id: user.id, userId: user.userId, name: user.name, role: user.role } })
+         return res.json({
+            success: true,
+            message: '구글 로그인 성공',
+            token,
+            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+         })
       })
    })(req, res, next)
 })
@@ -236,7 +291,12 @@ router.get('/kakao/callback', (req, res, next) => {
             return next(loginError)
          }
          const token = signJwt(user)
-         return res.json({ success: true, message: '카카오 로그인 성공', token, user: { id: user.id, userId: user.userId, name: user.name, role: user.role } })
+         return res.json({
+            success: true,
+            message: '카카오 로그인 성공',
+            token,
+            user: { id: user.id, userId: user.userId, name: user.name, role: user.role },
+         })
       })
    })(req, res, next)
 })
@@ -245,7 +305,6 @@ router.get('/kakao/callback', (req, res, next) => {
 router.post('/check-username', async (req, res, next) => {
    try {
       const userId = String(req.body.userId || '').trim()
-
       if (!userId || !USERID_REGEX.test(userId)) {
          const err = new Error('userId 형식이 올바르지 않습니다. (4~20자 영문/숫자)')
          err.status = 400
@@ -313,7 +372,12 @@ router.get('/status', async (req, res, next) => {
       if (req.isAuthenticated?.() && req.user) {
          return res.status(200).json({
             isAuthenticated: true,
-            user: { id: req.user.id, userId: req.user.userId, name: req.user.name, role: req.user.role },
+            user: {
+               id: req.user.id,
+               userId: req.user.userId,
+               name: req.user.name,
+               role: req.user.role,
+            },
          })
       }
       return res.status(200).json({ isAuthenticated: false })
@@ -327,10 +391,10 @@ router.get('/status', async (req, res, next) => {
 // ✅ 로그인된 유저 정보를 반환 (새로고침 시 프론트 리덕스 초기화 → 여기로 복구)
 router.get('/me', (req, res) => {
    if (req.isAuthenticated && req.isAuthenticated()) {
-      const { id, userId, name, email, role } = req.user
-      return res.json({ user: { id, userId, name, email, role } })
+      const { id, userId, name, address, phoneNumber, email, role } = req.user
+      return res.json({ user: { id, userId, name, address, phoneNumber, email, role } })
    }
-   return res.json({ user: null })
+   return res.status(401).json({ user: null })
 })
 
 module.exports = router

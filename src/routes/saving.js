@@ -1,17 +1,8 @@
-<<<<<<< HEAD
 const express = require("express");
 const axios = require("axios");
 const { sequelize } = require("../models");
 const { Point, EcoAction, EcoActionLog, User } = require("../models");
 const { calcBikePoints, calcBikeCarbonSave } = require("../utils/savingUtils");
-=======
-// RE-Earth-api/src/routes/saving.js
-const express = require('express')
-const axios = require('axios')
-const { sequelize } = require('../models')
-const { Point, EcoAction, EcoActionLog } = require('../models')
-const { calcBikePoints, calcBikeCarbonSave } = require('../utils/savingUtils')
->>>>>>> 64246fa715dc70c38c0a1c30d46458692ba73e5a
 
 const router = express.Router();
 

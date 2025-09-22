@@ -466,7 +466,6 @@ router.get("/status", async (req, res, next) => {
 });
 
 // ✅ 로그인된 유저 정보를 반환 (새로고침 시 프론트 리덕스 초기화 → 여기로 복구)
-<<<<<<< HEAD
 router.get("/me", (req, res) => {
   if (req.isAuthenticated && req.isAuthenticated()) {
     const { id, userId, name, address, phoneNumber, email, role } = req.user;
@@ -476,14 +475,5 @@ router.get("/me", (req, res) => {
   }
   return res.status(401).json({ user: null });
 });
-=======
-router.get('/me', (req, res) => {
-   if (req.isAuthenticated && req.isAuthenticated()) {
-      const { id, userId, name, email, role } = req.user
-      return res.json({ user: { id, userId, name, email, role } })
-   }
-   return res.json({ user: null })
-})
->>>>>>> 64246fa715dc70c38c0a1c30d46458692ba73e5a
 
 module.exports = router;
